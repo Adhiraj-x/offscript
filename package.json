@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "fast-xml-parser": "^5.11.2",
     "html-to-image": "^1.11.11",
     "next": "14.2.35",
