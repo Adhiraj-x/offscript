@@ -1,0 +1,90 @@
+"use client";
+
+import { useState } from "react";
+import { formatDate, formatTime, paceLabel } from "@/lib/format";
+import { modeName } from "@/lib/modes";
+import type { Session } from "@/lib/types";
+
+function SessionCard({
+  session,
+  open,
+  onToggle,
+}: {
+  session: Session;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-line bg-panel transition-colors hover:border-white/20">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-start gap-4 p-5 text-left"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] text-muted">
+              {modeName(session.mode)}
+            </span>
+            <span className="text-[11px] text-muted/70">
+              {formatDate(session.date)} · {formatTime(session.date)}
+            </span>
+          </div>
+          <p className={`mt-2 text-[15px] leading-snug text-white/90 ${open ? "" : "line-clamp-2"}`}>
+            {session.topic}
+          </p>
+          <p className="mt-2 text-xs text-muted">
+            Content {session.contentScore} · Delivery {session.deliveryScore} · {session.wpm} WPM (
+            {paceLabel(session.wpm)}) · {session.fillerWordCount} fillers
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className={`font-mono text-2xl tabular-nums ${open ? "text-accent" : "text-white"}`}>
+            {session.overallScore}
+          </p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted/70">overall</p>
+        </div>
+      </button>
+
+      {open ? (
+        <div className="border-t border-line px-5 py-5">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Feedback</p>
+          <p className="mt-3 text-sm leading-relaxed text-white/80">{session.feedback}</p>
+          <p className="mt-6 text-[11px] uppercase tracking-[0.22em] text-muted">Transcript</p>
+          <p className="mt-3 max-h-60 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-white/60">
+            {session.transcript}
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export default function HistoryList({ sessions }: { sessions: Session[] }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  if (sessions.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-line p-10 text-center">
+        <p className="text-white/80">No sessions yet.</p>
+        <p className="mt-2 text-sm text-muted">
+          Your rated sessions land here — stored in this browser only.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {sessions.map((session) => (
+        <SessionCard
+          key={session.id}
+          session={session}
+          open={openId === session.id}
+          onToggle={() => setOpenId((current) => (current === session.id ? null : session.id))}
+        />
+      ))}
+    </div>
+  );
+}
