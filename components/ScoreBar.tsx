@@ -11,22 +11,34 @@ export default function ScoreBar({ label, value, accent, hint, band }: Props) {
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm text-muted">
+        <span className={accent ? "text-sm font-medium text-white" : "text-sm text-muted"}>
           {label}
           {hint ? <span className="ml-2 text-xs text-muted/60">{hint}</span> : null}
         </span>
         <span className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-2">
           {band ? (
-            <span className="text-[10px] uppercase tracking-[0.16em] text-muted/70">{band}</span>
+            <span
+              className={`text-[10px] uppercase tracking-[0.16em] ${
+                accent ? "font-medium text-accent/80" : "text-muted/70"
+              }`}
+            >
+              {band}
+            </span>
           ) : null}
           <span
-            className={`shrink-0 font-mono tabular-nums ${accent ? "text-lg text-accent" : "text-white/90"}`}
+            className={`shrink-0 font-mono tabular-nums ${
+              accent ? "text-xl font-semibold text-accent" : "text-base text-white/90"
+            }`}
           >
             {safe}
           </span>
         </span>
       </div>
-      <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-line">
+      <div
+        className={`w-full overflow-hidden rounded-full bg-line ${
+          accent ? "mt-2.5 h-2" : "mt-2 h-1.5"
+        }`}
+      >
         <div
           className={`h-full rounded-full ${accent ? "bg-accent" : "bg-white/35"}`}
           style={{ width: `${safe}%` }}

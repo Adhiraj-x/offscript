@@ -8,6 +8,7 @@ import {
   classifyPace,
   computeOverallScore,
   countAdjacentRepetitions,
+  feedbackRequirements,
   normalizeRating,
   scoreBand,
   SCORING_SYSTEM_PROMPT,
@@ -389,4 +390,55 @@ test("a clean transcript does not become a fabricated filler measurement", () =>
   assert.equal(fillers.total, 0);
   assert.match(prompt, /Filler estimate: 0 detected \(none detected\), 0 per 100 transcribed words/);
   assert.doesNotMatch(prompt, /NaN|undefined/);
+});
+
+test("normalizeRating accepts mainTakeaway and nextAttemptFocus when provided", () => {
+  const input = {
+    contentScore: 82,
+    deliveryScore: 78,
+    feedback: "You structured your response well and supported it with good examples.",
+    strengths: ["Clear structure", "Relevant examples"],
+    improvements: ["Reduce filler words", "Vary sentence pacing"],
+    mainTakeaway: "Strong structure with clear arguments; tighten your pace on transitions.",
+    nextAttemptFocus: "Pause for one second instead of saying 'like' when changing topics.",
+  };
+
+  const result = normalizeRating(input);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.value.mainTakeaway, input.mainTakeaway);
+  assert.equal(result.value.nextAttemptFocus, input.nextAttemptFocus);
+});
+
+test("normalizeRating gracefully tolerates omitted mainTakeaway and nextAttemptFocus", () => {
+  const result = normalizeRating(goodReply);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.value.mainTakeaway, undefined);
+  assert.equal(result.value.nextAttemptFocus, undefined);
+});
+
+test("feedbackRequirements cites the exact longest pause and forbids confusing 1.5s threshold", () => {
+  const metrics = computeSpeechMetrics({
+    transcript: words(40),
+    reportedDurationSeconds: 60,
+    segments: [
+      { start: 0, end: 20 },
+      { start: 29, end: 50 }, // 9-second pause
+    ],
+  });
+  const fillers = detectFillers(words(40), { wordCount: 40 });
+  const band = classifyPace(metrics.speakingRateWpm);
+  const reqs = feedbackRequirements(metrics, fillers, band);
+
+  const pauseReq = reqs.find((r) => r.includes("Pauses of 0.5s or longer were measured"));
+  assert.ok(pauseReq, "Pause requirement should be present");
+  assert.match(pauseReq, /longest single pause was 9s/i);
+  assert.match(pauseReq, /NEVER confuse the 1\.5s threshold with the pause duration/i);
+});
+
+test("SCORING_SYSTEM_PROMPT includes mainTakeaway, nextAttemptFocus, and pause accuracy instructions", () => {
+  assert.match(SCORING_SYSTEM_PROMPT, /"mainTakeaway": string/);
+  assert.match(SCORING_SYSTEM_PROMPT, /"nextAttemptFocus": string/);
+  assert.match(SCORING_SYSTEM_PROMPT, /NEVER confuse the 1\.5s threshold/);
 });

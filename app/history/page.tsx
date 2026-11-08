@@ -9,6 +9,24 @@ import { loadHistory } from "@/lib/storage";
 import { computeStreak } from "@/lib/streak";
 import type { Session } from "@/lib/types";
 
+function FlameIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+    </svg>
+  );
+}
+
 export default function HistoryPage() {
   const [sessions, setSessions] = useState<Session[] | null>(null);
 
@@ -37,7 +55,10 @@ export default function HistoryPage() {
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <p className="text-lg">
                 {streak.current > 0 ? (
-                  <span className="text-accent">🔥 {streak.current} day streak</span>
+                  <span className="inline-flex items-center gap-1.5 text-accent">
+                    <FlameIcon className="h-4 w-4" />
+                    <span>{streak.current} day streak</span>
+                  </span>
                 ) : (
                   <span className="text-white/70">No streak yet — practice today to start one.</span>
                 )}

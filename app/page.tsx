@@ -91,6 +91,14 @@ export default function HomePage() {
 
         const metrics = coerceSpeechMetrics(payload.metrics);
         const fillers = coerceFillers(payload.fillers);
+        const mainTakeaway =
+          typeof payload.mainTakeaway === "string" && payload.mainTakeaway.trim().length > 0
+            ? payload.mainTakeaway.trim()
+            : undefined;
+        const nextAttemptFocus =
+          typeof payload.nextAttemptFocus === "string" && payload.nextAttemptFocus.trim().length > 0
+            ? payload.nextAttemptFocus.trim()
+            : undefined;
         const rated: RatingResult = {
           contentScore: clampScore(Number(payload.contentScore ?? 0)),
           deliveryScore: clampScore(Number(payload.deliveryScore ?? 0)),
@@ -98,6 +106,8 @@ export default function HomePage() {
           feedback: String(payload.feedback ?? ""),
           strengths: Array.isArray(payload.strengths) ? payload.strengths.map(String) : [],
           improvements: Array.isArray(payload.improvements) ? payload.improvements.map(String) : [],
+          mainTakeaway,
+          nextAttemptFocus,
           wpm: roundRate(Number(metrics?.wpm ?? payload.wpm ?? 0)),
           fillerWordCount: Math.max(
             0,
@@ -121,6 +131,8 @@ export default function HomePage() {
           fillerWordCount: rated.fillerWordCount,
           feedback: rated.feedback,
           transcript: rated.transcript,
+          mainTakeaway,
+          nextAttemptFocus,
           metrics: metrics ?? undefined,
           fillers: fillers ?? undefined,
         };
@@ -175,49 +187,57 @@ export default function HomePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 pb-24">
+    <main className="mx-auto w-full max-w-2xl px-6 pb-24">
       <Header streak={streak} />
 
       {phase === "setup" ? (
-        <div className="pt-10">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-accent">Speaking practice</p>
-          <h1 className="mt-4 text-balance text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
-            Practice thinking
-            <br />
-            out loud.
-          </h1>
-          <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted">
-            Pick a mode, spin a topic, then talk for two minutes. You&apos;ll get a transcript and honest
-            feedback on what you said and how you said it.
-          </p>
+        <div className="space-y-10 pt-4 sm:pt-6">
+          {/* Hero Section */}
+          <section className="pt-4 pb-2 text-center sm:pt-8 sm:pb-4">
+            <h1 className="text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
+              Prepare. Speak. Improve.
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-balance text-sm leading-relaxed text-muted sm:text-base">
+              Build your thoughts, deliver your response, and become a more effective communicator.
+            </p>
+          </section>
 
-          <section className="mt-12">
-            <p className="mb-3 text-[11px] uppercase tracking-[0.22em] text-muted">1 — Pick a mode</p>
+          {/* Format Selection */}
+          <section className="space-y-3.5">
+            <h2 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted">
+              CHOOSE YOUR FORMAT
+            </h2>
             <ModePicker value={mode} onChange={pickMode} />
           </section>
 
-          <section className="mt-10">
-            <p className="mb-3 text-[11px] uppercase tracking-[0.22em] text-muted">2 — Spin a topic</p>
+          {/* Topic Selection */}
+          <section className="space-y-3.5">
+            <h2 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted">
+              YOUR TOPIC
+            </h2>
             <TopicSpinner
               topic={topic}
               onPick={setTopic}
-              disabled={!mode}
               onSpinStateChange={setSpinning}
+              onError={setErrorMessage}
             />
           </section>
 
-          <button
-            type="button"
-            onClick={startPrep}
-            disabled={!mode || !topic || spinning}
-            className="mt-8 w-full rounded-full bg-accent px-6 py-3 text-sm font-medium text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-line disabled:text-muted sm:w-auto sm:px-8"
-          >
-            {spinning
-              ? "Spinning…"
-              : mode && topic
-                ? `Start ${modeInfo(mode).prepLabel} →`
-                : "Pick a mode and spin a topic"}
-          </button>
+          {/* Primary Action CTA */}
+          <section className="pt-2">
+            <button
+              type="button"
+              onClick={startPrep}
+              disabled={!mode || !topic || spinning}
+              className={`w-full rounded-full py-4 px-8 text-sm sm:text-base font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base sm:w-auto ${
+                mode && topic && !spinning
+                  ? "bg-accent text-black hover:bg-accent/90 active:scale-[0.98] shadow-[0_0_24px_-8px_rgba(201,249,108,0.35)] cursor-pointer"
+                  : "border border-line bg-panel/50 text-muted/50 cursor-not-allowed"
+              }`}
+            >
+              {mode && topic ? "Start preparation" : "Choose a mode and get a topic"}
+            </button>
+          </section>
         </div>
       ) : null}
 

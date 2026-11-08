@@ -138,14 +138,60 @@ body {
     0 0 50px -18px rgba(201, 249, 108, 0.5);
 }
 
+/* Editorial topic word animation */
+@keyframes editorial-word-cycle {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(4px);
+  }
+  20%,
+  80% {
+    opacity: 0.85;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+    filter: blur(4px);
+  }
+}
+
+.editorial-word {
+  animation: editorial-word-cycle 550ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes topic-smooth-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.topic-reveal {
+  animation: topic-smooth-reveal 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .eq-bar,
   .rec-dot,
   .spin-icon,
   .reel-item,
   .reel-land,
-  .reel-fade {
+  .reel-fade,
+  .editorial-word,
+  .topic-reveal {
     animation: none;
+    transform: none;
+    filter: none;
+    opacity: 1;
   }
 
   .viz-bar {

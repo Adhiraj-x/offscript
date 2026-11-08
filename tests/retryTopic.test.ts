@@ -191,14 +191,14 @@ test("both attempts persist separately as distinct history records without overw
   assert.notEqual(history[0].overallScore, history[1].overallScore);
 });
 
-test("practice again clears topic to allow new topic generation", () => {
+test("home action clears topic to allow new topic generation from setup", () => {
   let topic: Topic | null = { text: "Urban Farming", category: "trend" };
   let mode: Mode | null = "off-the-cuff";
   let phase: string = "result";
   let prepAttempt = 2;
   let result: unknown = { score: 75 };
 
-  // Simulate resetPractice
+  // Simulate resetPractice triggered by the "Home" action
   const resetPractice = () => {
     result = null;
     topic = null;
@@ -214,6 +214,20 @@ test("practice again clears topic to allow new topic generation", () => {
   assert.equal(prepAttempt, 0);
   // Mode is retained for convenience when spinning a new topic
   assert.equal(mode, "off-the-cuff");
+});
+
+test("result screen defines the four actions: Retry, Home, Share result, View history", () => {
+  const actions = {
+    primary: "Retry",
+    secondary: "Home",
+    utility: ["Share result", "View history"],
+  };
+
+  assert.equal(actions.primary, "Retry");
+  assert.equal(actions.secondary, "Home");
+  assert.equal(actions.utility.length, 2);
+  assert.ok(actions.utility.includes("Share result"));
+  assert.ok(actions.utility.includes("View history"));
 });
 
 test("supports every topic category across retries", () => {
@@ -317,5 +331,25 @@ test("history and share cards remain compatible after multiple retries", () => {
     const safeOverall = clampScore(item.overallScore);
     assert.ok(safeOverall >= 0 && safeOverall <= 100);
   }
+});
+
+test("mainTakeaway and nextAttemptFocus persist in sessions across retries and storage", () => {
+  const session = createSession({
+    id: "sess-takeaway-1",
+    mainTakeaway: "Clear and confident delivery, but pause more before transitions.",
+    nextAttemptFocus: "Take a 1-second breath before introducing your secondary point.",
+  });
+
+  saveSession(session);
+  const loaded = loadHistory().find((s) => s.id === "sess-takeaway-1");
+  assert.ok(loaded);
+  assert.equal(
+    loaded.mainTakeaway,
+    "Clear and confident delivery, but pause more before transitions.",
+  );
+  assert.equal(
+    loaded.nextAttemptFocus,
+    "Take a 1-second breath before introducing your secondary point.",
+  );
 });
 

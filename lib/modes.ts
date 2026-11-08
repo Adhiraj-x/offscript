@@ -14,14 +14,14 @@ export const MODES: ModeInfo[] = [
     name: "Off the Cuff",
     prepSeconds: 60,
     prepLabel: "60s prep",
-    blurb: "A minute to gather your thoughts, then two minutes to talk. No notes, no safety net.",
+    blurb: "Organise your thoughts quickly, then deliver your response.",
   },
   {
     id: "deep-research",
     name: "Deep Research",
     prepSeconds: 600,
     prepLabel: "10 min prep",
-    blurb: "Ten minutes to dig into the details and build a real argument. Then deliver it out loud.",
+    blurb: "Explore the topic, develop your ideas and build a considered argument before speaking.",
   },
 ];
 
