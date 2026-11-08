@@ -7,8 +7,10 @@ import PrepTimer from "@/components/PrepTimer";
 import Recorder from "@/components/Recorder";
 import ResultView from "@/components/ResultView";
 import TopicSpinner from "@/components/TopicSpinner";
-import { clampScore } from "@/lib/format";
+import { coerceFillers } from "@/lib/fillers";
+import { clampScore, roundRate } from "@/lib/format";
 import { modeInfo } from "@/lib/modes";
+import { coerceSpeechMetrics } from "@/lib/speechMetrics";
 import { loadHistory, newSessionId, saveSession } from "@/lib/storage";
 import { computeStreak } from "@/lib/streak";
 import { refreshTopicsInBackground } from "@/lib/topicPool";
@@ -23,6 +25,7 @@ type RatePayload = Partial<RatingResult> & {
   error?: string;
   wordCount?: number;
   duration?: number | null;
+  metrics?: unknown;
 };
 
 export default function HomePage() {
@@ -85,6 +88,8 @@ export default function HomePage() {
           return;
         }
 
+        const metrics = coerceSpeechMetrics(payload.metrics);
+        const fillers = coerceFillers(payload.fillers);
         const rated: RatingResult = {
           contentScore: clampScore(Number(payload.contentScore ?? 0)),
           deliveryScore: clampScore(Number(payload.deliveryScore ?? 0)),
@@ -92,9 +97,14 @@ export default function HomePage() {
           feedback: String(payload.feedback ?? ""),
           strengths: Array.isArray(payload.strengths) ? payload.strengths.map(String) : [],
           improvements: Array.isArray(payload.improvements) ? payload.improvements.map(String) : [],
-          wpm: Math.max(0, Math.round(Number(payload.wpm ?? 0))),
-          fillerWordCount: Math.max(0, Math.round(Number(payload.fillerWordCount ?? 0))),
+          wpm: roundRate(Number(metrics?.wpm ?? payload.wpm ?? 0)),
+          fillerWordCount: Math.max(
+            0,
+            Math.round(Number(payload.fillerWordCount ?? fillers?.total ?? 0)),
+          ),
           transcript: String(payload.transcript ?? ""),
+          metrics: metrics ?? undefined,
+          fillers: fillers ?? undefined,
         };
 
         const session: Session = {
@@ -110,6 +120,8 @@ export default function HomePage() {
           fillerWordCount: rated.fillerWordCount,
           feedback: rated.feedback,
           transcript: rated.transcript,
+          metrics: metrics ?? undefined,
+          fillers: fillers ?? undefined,
         };
         saveSession(session);
 

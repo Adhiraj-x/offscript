@@ -1,9 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { formatDate, formatTime, paceLabel } from "@/lib/format";
+import { formatDate, formatTime } from "@/lib/format";
 import { modeName } from "@/lib/modes";
+import { describePace } from "@/lib/scoring";
 import type { Session } from "@/lib/types";
+
+/**
+ * Same source as the result screen: the speaking rate, which is what the pace bands
+ * classify. Sprint 01 records without metrics keep their stored WPM.
+ */
+function paceLabel(session: Session): string {
+  return describePace(session.metrics ? session.metrics.speakingRateWpm : session.wpm);
+}
 
 function SessionCard({
   session,
@@ -35,8 +44,8 @@ function SessionCard({
             {session.topic}
           </p>
           <p className="mt-2 text-xs text-muted">
-            Content {session.contentScore} · Delivery {session.deliveryScore} · {session.wpm} WPM (
-            {paceLabel(session.wpm)}) · {session.fillerWordCount} fillers
+            Content {session.contentScore} · Delivery {session.deliveryScore} · {session.wpm} WPM ·{" "}
+            {paceLabel(session)} · {session.fillerWordCount} fillers
           </p>
         </div>
         <div className="shrink-0 text-right">

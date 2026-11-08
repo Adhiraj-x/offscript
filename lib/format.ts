@@ -4,10 +4,10 @@ export function clampScore(value: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
-export function paceLabel(wpm: number): string {
-  if (wpm < 120) return "Slow";
-  if (wpm <= 160) return "Good pace";
-  return "Fast";
+/** Non-negative rate to one decimal, so 46.67 WPM is stored and shown as 46.7. */
+export function roundRate(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.round(value * 10) / 10);
 }
 
 export function formatClock(totalSeconds: number): string {
@@ -15,6 +15,14 @@ export function formatClock(totalSeconds: number): string {
   const minutes = Math.floor(safe / 60);
   const seconds = safe % 60;
   return `${minutes}:${`${seconds}`.padStart(2, "0")}`;
+}
+
+/** Short duration label for sub-minute figures: "0s", "2.2s", "7s", "12s". */
+export function formatSeconds(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "0s";
+  const rounded = Math.round(seconds * 10) / 10;
+  if (Number.isInteger(rounded)) return `${rounded}s`;
+  return `${rounded.toFixed(1)}s`;
 }
 
 export function formatDate(iso: string): string {
