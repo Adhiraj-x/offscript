@@ -1,3 +1,5 @@
+import { coerceFillers } from "./fillers";
+import { coerceSpeechMetrics } from "./speechMetrics";
 import type { Session } from "./types";
 
 const HISTORY_KEY = "offscript_history_v1";
@@ -16,6 +18,22 @@ function isSession(value: unknown): value is Session {
   );
 }
 
+/**
+ * Legacy records predate the metric and filler fields. A malformed blob is dropped
+ * rather than rendered, so an old or hand-edited session still opens.
+ */
+function toSession(value: unknown): Session | null {
+  if (!isSession(value)) return null;
+  const session = value as Session;
+  const metrics = coerceSpeechMetrics((session as { metrics?: unknown }).metrics);
+  const fillers = coerceFillers((session as { fillers?: unknown }).fillers);
+  return {
+    ...session,
+    metrics: metrics ?? undefined,
+    fillers: fillers ?? undefined,
+  };
+}
+
 /** Reads history newest-first. Returns [] if storage is unavailable or corrupt. */
 export function loadHistory(): Session[] {
   try {
@@ -23,7 +41,10 @@ export function loadHistory(): Session[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isSession).sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+    return parsed
+      .map(toSession)
+      .filter((session): session is Session => session !== null)
+      .sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
   } catch {
     return [];
   }

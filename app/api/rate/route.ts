@@ -2,120 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { toFile } from "openai/uploads";
 import { GROQ_BASE_URL, GROQ_CHAT_MODEL } from "@/lib/groq";
+import { detectFillers } from "@/lib/fillers";
+import { computeSpeechMetrics } from "@/lib/speechMetrics";
+import { buildTranscriptionRequest } from "@/lib/transcription";
+import { rateAnswer, type ConversationMessage } from "@/lib/rateAnswer";
+import {
+  buildScoringUserPrompt,
+  classifyPace,
+  SCORING_SYSTEM_PROMPT,
+} from "@/lib/scoring";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const TRANSCRIBE_MODEL = "whisper-large-v3-turbo";
 const MIN_WORDS = 15;
 const MAX_UPLOAD_BYTES = 24 * 1024 * 1024;
 const MAX_TOPIC_LENGTH = 300;
-
-const FILLER_PATTERN = /\b(um+|uh+|er+|ah+|like|you know|basically|actually|so)\b/gi;
-
-const SYSTEM_PROMPT = `You are Offscript, a direct but encouraging speaking coach. You grade one spoken answer from its transcript and delivery metrics.
-
-Return ONLY a JSON object with exactly these keys:
-{
-  "contentScore": number,
-  "deliveryScore": number,
-  "overallScore": number,
-  "feedback": string,
-  "strengths": string[],
-  "improvements": string[]
-}
-
-Rules:
-- contentScore (0-100): structure, relevance to the topic, and depth of argument.
-- deliveryScore (0-100): filler words, pacing (use the supplied WPM), and clarity as visible in the transcript.
-- overallScore (0-100): holistic read of content and delivery together.
-- feedback: 3-4 sentences in the second person. It MUST include an explicit comment on pacing, quoting the WPM.
-- strengths: 2-3 short concrete items.
-- improvements: 2-3 short, actionable items.
-- Do not use markdown, code fences, or extra keys. Return one JSON object only.`;
-
-type ScoreInput = {
-  contentScore: number;
-  deliveryScore: number;
-  overallScore: number;
-  feedback: string;
-  strengths: string[];
-  improvements: string[];
+type WhisperVerboseResponse = {
+  text?: string;
+  duration?: number;
+  segments?: unknown;
+  words?: unknown;
 };
 
 function countWords(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
-}
-
-function countFillers(text: string): number {
-  // Fresh regex per call so lastIndex state can never leak.
-  const matches = text.match(new RegExp(FILLER_PATTERN.source, "gi"));
-  return matches ? matches.length : 0;
-}
-
-function toScore(value: unknown): number | null {
-  const numeric = typeof value === "number" ? value : typeof value === "string" ? Number.parseFloat(value) : NaN;
-  if (!Number.isFinite(numeric)) return null;
-  return Math.min(100, Math.max(0, Math.round(numeric)));
-}
-
-function toStringArray(value: unknown, limit = 4): string[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((item): item is string | number => typeof item === "string" || typeof item === "number")
-    .map((item) => String(item).trim())
-    .filter((item) => item.length > 0)
-    .slice(0, limit);
-}
-
-function normalizeScores(raw: unknown, wpm: number): ScoreInput {
-  const record = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-
-  const contentScore = toScore(record.contentScore ?? record.content) ?? 60;
-  const deliveryScore = toScore(record.deliveryScore ?? record.delivery) ?? 60;
-  const overallScore =
-    toScore(record.overallScore ?? record.overall) ?? Math.round((contentScore + deliveryScore) / 2);
-
-  const feedbackRaw = typeof record.feedback === "string" ? record.feedback.trim() : "";
-  const feedback =
-    feedbackRaw.length > 0
-      ? feedbackRaw
-      : `You landed around ${overallScore}/100 here. At ${wpm} WPM your pacing ${
-          wpm < 120 ? "left room to pick up energy" : wpm > 160 ? "ran hot, so trim the sprint" : "sat in a comfortable range"
-        }, and your argument was ${contentScore >= 70 ? "clear enough to follow" : "still finding its shape"}. Tighten the opening, keep one core claim, and give it a concrete example.`;
-
-  const strengths = toStringArray(record.strengths);
-  const improvements = toStringArray(record.improvements);
-
-  return {
-    contentScore,
-    deliveryScore,
-    overallScore,
-    feedback,
-    strengths: strengths.length > 0 ? strengths : ["You showed up and talked through it out loud."],
-    improvements:
-      improvements.length > 0
-        ? improvements
-        : ["Open with a one-sentence claim before the supporting detail."],
-  };
-}
-
-function parseJsonObject(text: string): unknown | null {
-  const trimmed = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    const start = trimmed.indexOf("{");
-    const end = trimmed.lastIndexOf("}");
-    if (start >= 0 && end > start) {
-      try {
-        return JSON.parse(trimmed.slice(start, end + 1));
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  }
 }
 
 function statusOf(error: unknown): number | undefined {
@@ -124,6 +35,37 @@ function statusOf(error: unknown): number | undefined {
     return typeof status === "number" ? status : undefined;
   }
   return undefined;
+}
+
+type UploadFile = Awaited<ReturnType<typeof toFile>>;
+
+async function createTranscription(
+  client: OpenAI,
+  upload: UploadFile,
+  withTimestamps: boolean,
+): Promise<WhisperVerboseResponse> {
+  return (await client.audio.transcriptions.create({
+    file: upload,
+    ...buildTranscriptionRequest(withTimestamps),
+  })) as unknown as WhisperVerboseResponse;
+}
+
+/**
+ * Word-level timestamps give real pause resolution. If the provider rejects that
+ * parameter, retry once with the default segment timestamps instead of failing the
+ * whole take; pause figures then come from segment boundaries only.
+ */
+async function transcribe(client: OpenAI, upload: UploadFile): Promise<WhisperVerboseResponse> {
+  try {
+    return await createTranscription(client, upload, true);
+  } catch (error) {
+    const status = statusOf(error);
+    if (status === 400 || status === 422) {
+      console.warn("[api/rate] timestamp_granularities rejected; retrying with segment timestamps only");
+      return await createTranscription(client, upload, false);
+    }
+    throw error;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -169,112 +111,107 @@ export async function POST(request: NextRequest) {
 
   try {
     const extension = (audio.type || "").includes("mp4") ? "m4a" : "webm";
-    const upload = await toFile(
-      new Uint8Array(await audio.arrayBuffer()),
-      `take.${extension}`,
-      { type: audio.type || "audio/webm" },
-    );
+    const upload = await toFile(new Uint8Array(await audio.arrayBuffer()), `take.${extension}`, {
+      type: audio.type || "audio/webm",
+    });
 
-    const transcription = (await client.audio.transcriptions.create({
-      file: upload,
-      model: TRANSCRIBE_MODEL,
-      response_format: "verbose_json",
-      language: "en",
-      temperature: 0,
-    })) as unknown as { text?: string; duration?: number };
+    const transcription = await transcribe(client, upload);
 
     const transcript = (transcription.text ?? "").trim();
-    const wordCount = countWords(transcript);
-    const reportedDuration =
-      typeof transcription.duration === "number" && transcription.duration > 0
-        ? transcription.duration
-        : null;
+    const metrics = computeSpeechMetrics({
+      transcript,
+      reportedDurationSeconds: transcription.duration ?? null,
+      words: transcription.words,
+      segments: transcription.segments,
+    });
+    const fillers = detectFillers(transcript, {
+      wordCount: metrics.wordCount,
+      // Used only when the word timings line up with the transcript; ignored otherwise.
+      wordTimings: transcription.words,
+    });
+    // Evidence for the feedback wording only; the model awards the delivery score.
+    const paceBand = classifyPace(metrics.speakingRateWpm);
 
-    if (wordCount < MIN_WORDS) {
+    if (metrics.wordCount < MIN_WORDS) {
       // Enough to tell a silent mic apart from a short take; the transcript itself is not logged.
       console.log("[api/rate] not enough speech", {
         bytes: audio.size,
         mime: audio.type,
-        words: wordCount,
-        seconds: reportedDuration,
+        words: metrics.wordCount,
+        seconds: metrics.durationSeconds,
+        timestamps: metrics.timestampGranularity,
       });
       return NextResponse.json(
         {
           error: "TOO_SHORT",
           message: "We couldn't hear enough to score that — try again with a longer take.",
           transcript,
-          wordCount,
-          duration: reportedDuration,
-          wpm: 0,
-          fillerWordCount: countFillers(transcript),
+          wordCount: metrics.wordCount,
+          duration: metrics.durationSeconds,
+          wpm: metrics.wpm,
+          fillerWordCount: fillers.total,
+          metrics,
         },
         { status: 422 },
       );
     }
 
-    // Fall back to a nominal 150 WPM read if the API omits duration.
-    const minutes = reportedDuration ? reportedDuration / 60 : wordCount / 150;
-    const wpm = Math.round(wordCount / minutes);
-
-    const fillerWordCount = countFillers(transcript);
-
-    const userPrompt = `Topic: ${topic}
-Mode: ${mode}
-Words spoken: ${wordCount}
-Duration: ${reportedDuration ? Math.round(reportedDuration) : "unknown"} seconds
-Pacing: ${wpm} WPM
-Filler words counted: ${fillerWordCount}
-
-Transcript:
-"""${transcript}"""
-
-Score this answer and return the JSON object.`;
-
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userPrompt },
+    const messages: ConversationMessage[] = [
+      { role: "system", content: SCORING_SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: buildScoringUserPrompt({ topic, mode, transcript, metrics, fillers }),
+      },
     ];
 
-    let scores: ScoreInput | null = null;
-    for (let attempt = 0; attempt < 2 && !scores; attempt += 1) {
-      const completion = await client.chat.completions.create({
-        model: GROQ_CHAT_MODEL,
-        messages,
-        temperature: 0.3,
-        max_tokens: 900,
-        response_format: { type: "json_object" },
+    // The model judges content and delivery; the server only validates the scores and
+    // applies the 60/40 overall formula inside normalizeRating.
+    const scoring = await rateAnswer({
+      messages,
+      paceBand,
+      requestCompletion: async (conversation) => {
+        const completion = await client.chat.completions.create({
+          model: GROQ_CHAT_MODEL,
+          messages: conversation as OpenAI.Chat.ChatCompletionMessageParam[],
+          temperature: 0.3,
+          max_tokens: 1200,
+          response_format: { type: "json_object" },
+        });
+        return completion.choices[0]?.message?.content ?? "";
+      },
+    });
+
+    if (!scoring.ok) {
+      // No default scores: an unusable reply is reported instead of faked.
+      console.warn("[api/rate] scoring reply rejected", {
+        attempts: scoring.attempts,
+        reason: scoring.reason,
       });
-
-      const text = completion.choices[0]?.message?.content ?? "";
-      const parsed = parseJsonObject(text);
-      if (parsed) {
-        scores = normalizeScores(parsed, wpm);
-        break;
-      }
-
-      // Retry once: tell the model exactly what went wrong.
-      messages.push({ role: "assistant", content: text || "(empty reply)" });
-      messages.push({
-        role: "user",
-        content:
-          "That reply was not valid JSON. Reply again with ONLY the JSON object described in the system prompt.",
-      });
-    }
-
-    if (!scores) {
       return NextResponse.json(
-        { error: "SCORING_FAILED", message: "The coach couldn't score that one. Try again in a moment." },
+        {
+          error: "SCORING_FAILED",
+          message: "The coach's reply came back incomplete, so that take wasn't scored. Try again in a moment.",
+        },
         { status: 502 },
       );
     }
 
+    if (scoring.attempts > 1) {
+      console.warn("[api/rate] scoring reply needed a corrected retry", {
+        attempts: scoring.attempts,
+      });
+    }
+
     return NextResponse.json({
       ok: true,
-      ...scores,
-      wpm,
-      fillerWordCount,
+      ...scoring.value,
+      wpm: metrics.wpm,
+      fillerWordCount: fillers.total,
+      fillers,
       transcript,
-      wordCount,
+      wordCount: metrics.wordCount,
+      duration: metrics.durationSeconds,
+      metrics,
     });
   } catch (error) {
     if (statusOf(error) === 429) {
