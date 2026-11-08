@@ -16,6 +16,7 @@ type Props = {
   category?: TopicCategory;
   mode: Mode;
   onRestart: () => void;
+  onRetry?: () => void;
 };
 
 function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
@@ -47,7 +48,14 @@ function decimal(value: number | null): string {
   return Number.isInteger(value) ? `${value}` : value.toFixed(1);
 }
 
-export default function ResultView({ result, topic, category, mode, onRestart }: Props) {
+export default function ResultView({
+  result,
+  topic,
+  category,
+  mode,
+  onRestart,
+  onRetry,
+}: Props) {
   const metrics = result.metrics;
   const pace = classifyPace(metrics?.speakingRateWpm ?? null);
   const pausesAvailable =
@@ -260,6 +268,26 @@ export default function ResultView({ result, topic, category, mode, onRestart }:
       </div>
 
       <div className="flex flex-wrap items-center gap-3 pt-2">
+        {onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-black transition-opacity hover:opacity-90"
+          >
+            Retry same topic
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={onRestart}
+          className={
+            onRetry
+              ? "rounded-full border border-line px-5 py-2.5 text-sm text-white/80 transition-colors hover:border-white/30 hover:text-white"
+              : "rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-black transition-opacity hover:opacity-90"
+          }
+        >
+          Practice again
+        </button>
         <ShareCard
           topic={topic}
           mode={mode}
@@ -268,13 +296,6 @@ export default function ResultView({ result, topic, category, mode, onRestart }:
           deliveryScore={result.deliveryScore}
           wpm={result.wpm}
         />
-        <button
-          type="button"
-          onClick={onRestart}
-          className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-black transition-opacity hover:opacity-90"
-        >
-          Practice again
-        </button>
         <Link
           href="/history"
           className="rounded-full border border-line px-5 py-2.5 text-sm text-white/80 transition-colors hover:border-white/30 hover:text-white"

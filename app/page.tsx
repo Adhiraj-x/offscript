@@ -36,6 +36,7 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [streak, setStreak] = useState(0);
   const [spinning, setSpinning] = useState(false);
+  const [prepAttempt, setPrepAttempt] = useState(0);
 
   useEffect(() => {
     setStreak(computeStreak(loadHistory()).current);
@@ -147,11 +148,20 @@ export default function HomePage() {
   const startPrep = useCallback(() => setPhase("prep"), []);
   const startSpeaking = useCallback(() => setPhase("speak"), []);
 
+  const retrySameTopic = useCallback(() => {
+    if (!topic || !mode) return;
+    setResult(null);
+    setErrorMessage("");
+    setPrepAttempt((prev) => prev + 1);
+    setPhase("prep");
+  }, [topic, mode]);
+
   function resetPractice() {
     setResult(null);
     setErrorMessage("");
     setTopic(null);
     setSpinning(false);
+    setPrepAttempt(0);
     setPhase("setup");
   }
 
@@ -160,6 +170,7 @@ export default function HomePage() {
     if (phase !== "setup") {
       setPhase("setup");
       setResult(null);
+      setPrepAttempt(0);
     }
   }
 
@@ -215,7 +226,7 @@ export default function HomePage() {
           <p className="text-balance text-lg leading-snug text-white/90">{topic.text}</p>
           <div className="mt-8">
             <PrepTimer
-              key={`${mode}-${topic.text}`}
+              key={`${mode}-${topic.text}-${prepAttempt}`}
               seconds={modeInfo(mode).prepSeconds}
               label={modeInfo(mode).prepLabel.replace(" prep", "")}
               onDone={startSpeaking}
@@ -295,6 +306,7 @@ export default function HomePage() {
             category={topic.category}
             mode={mode}
             onRestart={resetPractice}
+            onRetry={retrySameTopic}
           />
         </div>
       ) : null}
