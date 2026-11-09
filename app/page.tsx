@@ -9,7 +9,7 @@ import ResultView from "@/components/ResultView";
 import TopicSpinner from "@/components/TopicSpinner";
 import { coerceFillers } from "@/lib/fillers";
 import { clampScore, roundRate } from "@/lib/format";
-import { modeInfo } from "@/lib/modes";
+import { modeInfo, modeName } from "@/lib/modes";
 import { coerceSpeechMetrics } from "@/lib/speechMetrics";
 import { loadHistory, newSessionId, saveSession } from "@/lib/storage";
 import { computeStreak } from "@/lib/streak";
@@ -168,14 +168,17 @@ export default function HomePage() {
     setPhase("prep");
   }, [topic, mode]);
 
-  function resetPractice() {
+  const resetPractice = useCallback(() => {
     setResult(null);
     setErrorMessage("");
     setTopic(null);
     setSpinning(false);
     setPrepAttempt(0);
     setPhase("setup");
-  }
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, []);
 
   function pickMode(next: Mode) {
     setMode(next);
@@ -188,32 +191,24 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-6 pb-24">
-      <Header streak={streak} />
+      <Header streak={streak} onLogoClick={resetPractice} />
 
       {phase === "setup" ? (
-        <div className="space-y-10 pt-4 sm:pt-6">
+        <div className="pt-4 sm:pt-6">
           {/* Hero Section */}
-          <section className="pt-4 pb-2 text-center sm:pt-8 sm:pb-4">
+          <section className="pt-3 pb-1 text-center sm:pt-6 sm:pb-2">
             <h1 className="text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
               Prepare. Speak. Improve.
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-balance text-sm leading-relaxed text-muted sm:text-base">
-              Build your thoughts, deliver your response, and become a more effective communicator.
+            <p className="mx-auto mt-4 sm:mt-5 max-w-[520px] text-balance text-sm sm:text-base leading-relaxed text-muted">
+              Where ideas take shape and voices find confidence.
             </p>
           </section>
 
-          {/* Format Selection */}
-          <section className="space-y-3.5">
+          {/* Section 1: Topic Selection */}
+          <section className="mt-7 sm:mt-8 space-y-3 sm:space-y-3.5">
             <h2 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted">
-              CHOOSE YOUR FORMAT
-            </h2>
-            <ModePicker value={mode} onChange={pickMode} />
-          </section>
-
-          {/* Topic Selection */}
-          <section className="space-y-3.5">
-            <h2 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted">
-              2 — GET A TOPIC
+              1 — GET A TOPIC
             </h2>
             <TopicSpinner
               topic={topic}
@@ -223,19 +218,35 @@ export default function HomePage() {
             />
           </section>
 
+          {/* Section 2: Mode Selection */}
+          <section className="mt-9 sm:mt-10 space-y-3 sm:space-y-3.5">
+            <h2 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted">
+              2 — PICK A MODE
+            </h2>
+            <ModePicker value={mode} onChange={pickMode} />
+          </section>
+
           {/* Primary Action CTA */}
-          <section className="pt-2">
+          <section className="mt-7 sm:mt-8">
             <button
               type="button"
               onClick={startPrep}
               disabled={!mode || !topic || spinning}
               className={`w-full rounded-full py-4 px-8 text-sm sm:text-base font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base sm:w-auto ${
                 mode && topic && !spinning
-                  ? "bg-accent text-black hover:bg-accent/90 active:scale-[0.98] shadow-[0_0_24px_-8px_rgba(201,249,108,0.35)] cursor-pointer"
-                  : "border border-line bg-panel/50 text-muted/50 cursor-not-allowed"
+                  ? "border border-transparent bg-accent text-black hover:bg-accent/90 active:scale-[0.98] shadow-[0_0_24px_-8px_rgba(201,249,108,0.35)] cursor-pointer"
+                  : "border border-line bg-panel text-muted cursor-not-allowed shadow-none disabled:border-line disabled:bg-panel disabled:text-muted disabled:opacity-100 disabled:cursor-not-allowed"
               }`}
             >
-              {mode && topic ? "Start preparation" : "Choose a mode and get a topic"}
+              <span className={mode && topic && !spinning ? "text-black" : "text-muted"}>
+                {topic && mode
+                  ? "Start preparation"
+                  : topic && !mode
+                    ? "Pick a mode to continue"
+                    : !topic && mode
+                      ? "Get a topic to continue"
+                      : "Get a topic and pick a mode"}
+              </span>
             </button>
           </section>
         </div>
@@ -243,6 +254,12 @@ export default function HomePage() {
 
       {phase === "prep" && mode && topic ? (
         <div className="pt-6">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Preparation</p>
+            <span className="rounded-full border border-line px-2.5 py-0.5 text-[11px] text-muted">
+              {modeName(mode)}
+            </span>
+          </div>
           <p className="text-balance text-lg leading-snug text-white/90">{topic.text}</p>
           <div className="mt-8">
             <PrepTimer
@@ -265,7 +282,12 @@ export default function HomePage() {
 
       {phase === "speak" && mode && topic ? (
         <div className="pt-6">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Topic</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Topic</p>
+            <span className="rounded-full border border-line px-2.5 py-0.5 text-[11px] text-muted">
+              {modeName(mode)}
+            </span>
+          </div>
           <p className="mt-3 text-balance text-xl leading-snug text-white/90">{topic.text}</p>
           <div className="mt-8">
             <Recorder onComplete={handleRecorded} onCancel={resetPractice} />

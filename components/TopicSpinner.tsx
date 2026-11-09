@@ -189,7 +189,10 @@ export default function TopicSpinner({ topic, onPick, disabled, onSpinStateChang
             </p>
           </>
         ) : (
-          <p className="max-w-xs text-sm sm:text-base leading-relaxed text-muted/70">
+          <p
+            className="max-w-xs text-sm sm:text-base leading-relaxed text-[#8e949d]"
+            style={{ color: "#8e949d" }}
+          >
             Your speaking topic will appear here.
           </p>
         )}

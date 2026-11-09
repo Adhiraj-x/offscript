@@ -24,7 +24,7 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
-const MAX_TOPIC_WORDS = 25;
+const MAX_TOPIC_WORDS = 35;
 
 type Provider = "gemini" | "groq" | "static";
 
@@ -176,12 +176,19 @@ function validateAndCleanTopic(
   return { text, category: requestedCategory, domain };
 }
 
+type ModelRequestOptions = {
+  max_tokens?: number;
+  max_completion_tokens?: number;
+  reasoning_effort?: "low" | "medium" | "high";
+};
+
 async function requestTopicFromModel(
   client: OpenAI,
   model: string,
   category: CanonicalTopicCategory,
   avoid: NormalizedAvoidItem[],
   avoidSet: Set<string>,
+  options: ModelRequestOptions = {},
 ): Promise<{ text: string; category: CanonicalTopicCategory; domain: string }> {
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
     { role: "system", content: SYSTEM_PROMPT },
@@ -190,30 +197,43 @@ async function requestTopicFromModel(
 
   let lastReason = "invalid JSON";
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const completion = await client.chat.completions.create({
-      model,
-      messages,
-      temperature: 0.85,
-      max_tokens: 150,
-      response_format: { type: "json_object" },
-    });
+    try {
+      const completion = await client.chat.completions.create({
+        model,
+        messages,
+        response_format: { type: "json_object" },
+        ...(options.max_completion_tokens !== undefined
+          ? { max_completion_tokens: options.max_completion_tokens }
+          : { max_tokens: options.max_tokens ?? 1000 }),
+        ...(options.reasoning_effort !== undefined
+          ? { reasoning_effort: options.reasoning_effort }
+          : {}),
+      });
 
-    const content = completion.choices[0]?.message?.content ?? "";
-    const parsed = parseJsonObject(content);
+      const content = completion.choices[0]?.message?.content ?? "";
+      const parsed = parseJsonObject(content);
 
-    if (parsed) {
-      const cleaned = validateAndCleanTopic(parsed, category, avoidSet);
-      if (cleaned) return cleaned;
-      lastReason = "topic duplicated, empty, or unsuitable for category";
-    } else {
-      lastReason = "invalid JSON";
+      if (parsed) {
+        const cleaned = validateAndCleanTopic(parsed, category, avoidSet);
+        if (cleaned) return cleaned;
+        lastReason = "topic duplicated, empty, or unsuitable for category";
+      } else {
+        lastReason = "invalid JSON";
+      }
+
+      messages.push({ role: "assistant", content: content || "{}" });
+      messages.push({
+        role: "user",
+        content: `The previous response had ${lastReason}. Return ONLY valid JSON with 1 fresh ${category} topic: {"topic": "...", "domain": "..."}.`,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      const status = typeof err === "object" && err !== null && "status" in err ? (err as { status?: unknown }).status : undefined;
+      lastReason = message;
+      if (status === 429 || /rate_limit|resource_exhausted/i.test(message)) {
+        throw err;
+      }
     }
-
-    messages.push({ role: "assistant", content: content || "{}" });
-    messages.push({
-      role: "user",
-      content: `The previous response had ${lastReason}. Return ONLY valid JSON with 1 fresh ${category} topic: {"topic": "...", "domain": "..."}.`,
-    });
   }
 
   throw new TopicGenerationError(`${model} returned ${lastReason} twice`, "parse");
@@ -235,6 +255,7 @@ async function generateSingleTopic(
         category,
         avoid,
         avoidSet,
+        { max_tokens: 1000 },
       );
       return { topic: result, provider: "gemini" };
     } catch (error) {
@@ -255,6 +276,7 @@ async function generateSingleTopic(
         category,
         avoid,
         avoidSet,
+        { max_completion_tokens: 1000, reasoning_effort: "low" },
       );
       return { topic: result, provider: "groq" };
     } catch (error) {

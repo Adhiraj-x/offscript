@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 
 type Props = {
   streak?: number;
+  onLogoClick?: () => void;
 };
 
 function FlameIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
@@ -22,21 +25,31 @@ function FlameIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
   );
 }
 
-export default function Header({ streak }: Props) {
+export default function Header({ streak, onLogoClick }: Props) {
+  const handleLogoClick = () => {
+    onLogoClick?.();
+  };
+
   return (
     <header className="flex items-center justify-between gap-4 py-8">
-      <Link href="/" className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-        Offscript
+      <Link
+        href="/"
+        onClick={handleLogoClick}
+        aria-label="Offscript home"
+        className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base rounded-sm cursor-pointer"
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+        <span>Offscript</span>
       </Link>
       <nav className="flex items-center gap-5 text-sm text-muted">
         {typeof streak === "number" && streak > 0 ? (
           <span
             className="inline-flex items-center gap-1.5 text-accent"
-            title="Consecutive days practiced"
+            title={`${streak} day streak`}
           >
             <FlameIcon className="h-3.5 w-3.5" />
-            <span>{streak} day streak</span>
+            <span aria-hidden="true">{streak}</span>
+            <span className="sr-only">{streak} day streak</span>
           </span>
         ) : null}
         <Link href="/" className="transition-colors hover:text-white">

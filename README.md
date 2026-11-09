@@ -36,7 +36,7 @@ Next.js 14 (App Router) · TypeScript · Tailwind · OpenAI SDK pointed at Groq.
 
 ## How it works
 
-- **Modes** — _Off the Cuff_ (60s prep) or _Deep Research_ (10 min prep), defined in `lib/modes.ts`.
+- **Modes** — _Quick Prep_ (60s prep) or _Extended Prep_ (10 min prep), defined in `lib/modes.ts`.
 - **Topics** — 60 hardcoded prompts in `lib/topics.ts` across four categories (word, statement,
   general, trend), picked category-first so no shape dominates. `GET/POST /api/topics` asks Gemini
   (free tier) for 25 topics per category, retries once on bad JSON, and falls back to Groq on any
