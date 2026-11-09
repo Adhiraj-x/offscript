@@ -63,38 +63,38 @@ html.light {
   color-scheme: light;
 
   /* Theme tokens - Light Mode (Unified Muted Sage & Brand Olive Palette) */
-  --bg-base-rgb: 223 230 220;
-  --bg-panel-rgb: 232 238 229;
-  --bg-raised-rgb: 213 223 209;
-  --border-line-rgb: 203 215 199;
-  --color-track-rgb: 197 210 193;
-  --text-muted-rgb: 100 116 100;
+  --bg-base-rgb: 197 208 194;
+  --bg-panel-rgb: 208 217 204;
+  --bg-raised-rgb: 185 200 182;
+  --border-line-rgb: 173 188 170;
+  --color-track-rgb: 181 196 176;
+  --text-muted-rgb: 62 75 63;
   --text-primary-rgb: 32 40 32;
-  --text-secondary-rgb: 83 100 82;
+  --text-secondary-rgb: 66 83 68;
   --color-accent-rgb: 82 122 37;
   --color-accent-bg-rgb: 82 122 37;
   --color-accent-contrast-rgb: 255 255 255;
 
-  --bg-base: #dfe6dc;
-  --bg-panel: #e8eee5;
-  --bg-raised: #d5dfd1;
-  --border-line: #cbd7c7;
-  --color-track: #c5d2c1;
-  --border-line-subtle: rgba(203, 215, 199, 0.7);
+  --bg-base: #c5d0c2;
+  --bg-panel: #d0d9cc;
+  --bg-raised: #b9c8b6;
+  --border-line: #adbcaa;
+  --color-track: #b5c4b0;
+  --border-line-subtle: rgba(173, 188, 170, 0.7);
   --border-line-hover: rgba(32, 40, 32, 0.25);
 
   --text-primary: #202820;
-  --text-secondary: #536452;
-  --text-muted: #647464;
+  --text-secondary: #425344;
+  --text-muted: #3e4b3f;
 
   --color-accent: #527a25;
-  --color-accent-dim: #709448;
+  --color-accent-dim: #6b953a;
   --color-accent-hover: #45671f;
   --color-accent-bg: #527a25;
   --color-accent-contrast: #ffffff;
-  --color-accent-text: #527a25;
-  --color-score-secondary: #709448;
-  --color-selection-bg: #c8dac2;
+  --color-accent-text: #365418;
+  --color-score-secondary: #425344;
+  --color-selection-bg: #b9c8b6;
   --color-selection-text: #202820;
   --color-viz-bar: #527a25;
   --color-logo-dot: #527a25;
@@ -105,33 +105,33 @@ html.light {
   /* Ambient light fields: diffuse sage-green (upper-left), muted teal (lower-right), restrained olive/lime (hero) */
   --ambient-aura-1: radial-gradient(
     circle at center,
-    rgba(142, 182, 138, 0.22) 0%,
-    rgba(160, 196, 156, 0.14) 30%,
-    rgba(186, 214, 183, 0.06) 55%,
-    rgba(223, 230, 220, 0) 70%
+    rgba(142, 182, 138, 0.08) 0%,
+    rgba(160, 196, 156, 0.05) 30%,
+    rgba(186, 214, 183, 0.02) 55%,
+    rgba(197, 208, 194, 0) 70%
   );
   --ambient-aura-2: radial-gradient(
     circle at center,
-    rgba(46, 158, 148, 0.18) 0%,
-    rgba(76, 178, 168, 0.10) 32%,
-    rgba(118, 198, 190, 0.04) 56%,
-    rgba(223, 230, 220, 0) 70%
+    rgba(46, 158, 148, 0.06) 0%,
+    rgba(76, 178, 168, 0.04) 32%,
+    rgba(118, 198, 190, 0.015) 56%,
+    rgba(197, 208, 194, 0) 70%
   );
   --ambient-aura-3: radial-gradient(
     circle at center,
-    rgba(165, 205, 80, 0.14) 0%,
-    rgba(182, 218, 110, 0.07) 30%,
-    rgba(205, 232, 145, 0.03) 50%,
-    rgba(223, 230, 220, 0) 65%
+    rgba(165, 205, 80, 0.05) 0%,
+    rgba(182, 218, 110, 0.03) 30%,
+    rgba(205, 232, 145, 0.01) 50%,
+    rgba(197, 208, 194, 0) 65%
   );
 
   /* Ambient Particle Theme Colors - Light Mode (Deep Olive, Muted Dark Sage, Soft Charcoal) */
   --particle-lime: #527a25;
-  --particle-lime-glow: 0 0 2px rgba(82, 122, 37, 0.12);
+  --particle-lime-glow: 0 0 1px rgba(82, 122, 37, 0.08);
   --particle-teal: #53634f;
-  --particle-teal-glow: 0 0 2px rgba(83, 99, 79, 0.10);
+  --particle-teal-glow: 0 0 1px rgba(83, 99, 79, 0.06);
   --particle-sage: #374239;
-  --particle-sage-glow: 0 0 2px rgba(55, 66, 57, 0.08);
+  --particle-sage-glow: 0 0 1px rgba(55, 66, 57, 0.05);
 }
 
 html {
@@ -413,88 +413,88 @@ body {
 @keyframes particle-drift-light-1 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.28;
+    opacity: 0.16;
   }
   24% {
-    opacity: 0.50;
+    opacity: 0.28;
   }
   48% {
     transform: translate3d(14px, -18px, 0);
-    opacity: 0.22;
+    opacity: 0.12;
   }
   72% {
     transform: translate3d(-10px, -30px, 0);
-    opacity: 0.46;
+    opacity: 0.26;
   }
   88% {
     transform: translate3d(-16px, -14px, 0);
-    opacity: 0.25;
+    opacity: 0.14;
   }
 }
 
 @keyframes particle-drift-light-2 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.25;
+    opacity: 0.14;
   }
   28% {
     transform: translate3d(-16px, 16px, 0);
-    opacity: 0.48;
+    opacity: 0.27;
   }
   50% {
-    opacity: 0.20;
+    opacity: 0.12;
   }
   74% {
     transform: translate3d(12px, 28px, 0);
-    opacity: 0.44;
+    opacity: 0.25;
   }
   86% {
     transform: translate3d(18px, 12px, 0);
-    opacity: 0.30;
+    opacity: 0.16;
   }
 }
 
 @keyframes particle-drift-light-3 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.26;
+    opacity: 0.15;
   }
   20% {
     transform: translate3d(18px, 14px, 0);
-    opacity: 0.46;
+    opacity: 0.26;
   }
   44% {
-    opacity: 0.20;
+    opacity: 0.12;
   }
   68% {
     transform: translate3d(-12px, 24px, 0);
-    opacity: 0.50;
+    opacity: 0.28;
   }
   86% {
     transform: translate3d(-18px, 10px, 0);
-    opacity: 0.24;
+    opacity: 0.14;
   }
 }
 
 @keyframes particle-drift-light-4 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.30;
+    opacity: 0.16;
   }
   26% {
-    opacity: 0.20;
+    opacity: 0.12;
   }
   50% {
     transform: translate3d(-16px, -20px, 0);
-    opacity: 0.48;
+    opacity: 0.27;
   }
   74% {
     transform: translate3d(14px, -12px, 0);
-    opacity: 0.22;
+    opacity: 0.13;
   }
   88% {
     transform: translate3d(18px, 10px, 0);
-    opacity: 0.42;
+    opacity: 0.24;
   }
 }
 
@@ -569,14 +569,14 @@ html.light .border-accent {
 
 /* Smooth View Transition for Dark/Light Theme Crossfade */
 ::view-transition-group(root) {
-  animation-duration: 280ms;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-duration: 600ms;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
 }
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 280ms;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-duration: 600ms;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
   mix-blend-mode: normal;
 }
 

@@ -557,23 +557,23 @@ test("dark and light theme system token architecture, persistence, and toggle be
       accentContrast: "#08090b",
     },
     light: {
-      base: "#dfe6dc",
-      panel: "#e8eee5",
-      raised: "#d5dfd1",
-      line: "#cbd7c7",
-      track: "#c5d2c1",
+      base: "#c5d0c2",
+      panel: "#d0d9cc",
+      raised: "#b9c8b6",
+      line: "#adbcaa",
+      track: "#b5c4b0",
       textPrimary: "#202820",
-      textSecondary: "#536452",
-      textMuted: "#647464",
+      textSecondary: "#425344",
+      textMuted: "#3e4b3f",
       accent: "#527a25",
       accentHover: "#45671f",
       accentBg: "#527a25",
       accentContrast: "#ffffff",
-      accentText: "#527a25",
+      accentText: "#365418",
       logoDot: "#527a25",
       vizBar: "#527a25",
-      scoreSecondary: "#709448",
-      selectionBg: "#c8dac2",
+      scoreSecondary: "#425344",
+      selectionBg: "#b9c8b6",
       selectionText: "#202820",
     },
   };
@@ -584,26 +584,26 @@ test("dark and light theme system token architecture, persistence, and toggle be
   assert.equal(THEME_TOKENS.dark.textPrimary, "#f0f0f0");
   assert.equal(THEME_TOKENS.dark.accent, "#c9f96c");
 
-  // Light tokens (Softer Muted Sage and Brand Olive Palette)
-  assert.equal(THEME_TOKENS.light.base, "#dfe6dc");
-  assert.equal(THEME_TOKENS.light.panel, "#e8eee5");
+  // Light tokens (Low-Glare Muted Sage and Brand Olive Palette)
+  assert.equal(THEME_TOKENS.light.base, "#c5d0c2");
+  assert.equal(THEME_TOKENS.light.panel, "#d0d9cc");
   assert.notEqual(THEME_TOKENS.light.panel, "#ffffff", "Avoid pure white #ffffff as dominant card background");
-  assert.equal(THEME_TOKENS.light.raised, "#d5dfd1");
-  assert.equal(THEME_TOKENS.light.line, "#cbd7c7");
-  assert.equal(THEME_TOKENS.light.track, "#c5d2c1");
+  assert.equal(THEME_TOKENS.light.raised, "#b9c8b6");
+  assert.equal(THEME_TOKENS.light.line, "#adbcaa");
+  assert.equal(THEME_TOKENS.light.track, "#b5c4b0");
   assert.equal(THEME_TOKENS.light.textPrimary, "#202820");
   assert.notEqual(THEME_TOKENS.light.textPrimary, "#000000", "Avoid pure black text");
-  assert.equal(THEME_TOKENS.light.textSecondary, "#536452");
-  assert.equal(THEME_TOKENS.light.textMuted, "#647464");
+  assert.equal(THEME_TOKENS.light.textSecondary, "#425344");
+  assert.equal(THEME_TOKENS.light.textMuted, "#3e4b3f");
   assert.equal(THEME_TOKENS.light.accent, "#527a25");
   assert.equal(THEME_TOKENS.light.accentHover, "#45671f");
   assert.equal(THEME_TOKENS.light.accentBg, "#527a25");
   assert.equal(THEME_TOKENS.light.accentContrast, "#ffffff", "White text on olive button for accessible contrast");
-  assert.equal(THEME_TOKENS.light.accentText, "#527a25");
+  assert.equal(THEME_TOKENS.light.accentText, "#365418");
   assert.equal(THEME_TOKENS.light.logoDot, "#527a25");
   assert.equal(THEME_TOKENS.light.vizBar, "#527a25");
-  assert.equal(THEME_TOKENS.light.scoreSecondary, "#709448");
-  assert.equal(THEME_TOKENS.light.selectionBg, "#c8dac2");
+  assert.equal(THEME_TOKENS.light.scoreSecondary, "#425344");
+  assert.equal(THEME_TOKENS.light.selectionBg, "#b9c8b6");
   assert.equal(THEME_TOKENS.light.selectionText, "#202820");
 
   // 5. Refined light mode ambient background aura light fields & particles
@@ -641,10 +641,10 @@ test("dark and light theme system token architecture, persistence, and toggle be
   assert.equal(DARK_PARTICLE_COLORS.teal, "#2dd4bf");
   assert.equal(DARK_PARTICLE_COLORS.slate, "#e2e8f0");
 
-  // Particle opacity ranges for gentle twinkle shimmer without flash
-  const LIGHT_PARTICLE_OPACITY_RANGE = { min: 0.20, max: 0.50 };
-  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.min >= 0.15 && LIGHT_PARTICLE_OPACITY_RANGE.min <= 0.25);
-  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.max >= 0.45 && LIGHT_PARTICLE_OPACITY_RANGE.max <= 0.60);
+  // Particle opacity ranges for gentle twinkle shimmer without flash (low-glare light theme: 0.12 - 0.28)
+  const LIGHT_PARTICLE_OPACITY_RANGE = { min: 0.12, max: 0.28 };
+  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.min >= 0.10 && LIGHT_PARTICLE_OPACITY_RANGE.min <= 0.18);
+  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.max >= 0.24 && LIGHT_PARTICLE_OPACITY_RANGE.max <= 0.35);
 });
 
 test("smooth view transition theme crossfade architecture and reduced motion handling", () => {
@@ -652,9 +652,9 @@ test("smooth view transition theme crossfade architecture and reduced motion han
   const globalsCss = fs.readFileSync(path.join(process.cwd(), "app", "globals.css"), "utf-8");
   assert.ok(globalsCss.includes("::view-transition-old(root)"));
   assert.ok(globalsCss.includes("::view-transition-new(root)"));
-  assert.ok(globalsCss.includes("animation-duration: 280ms"));
+  assert.ok(globalsCss.includes("animation-duration: 600ms"));
   assert.ok(globalsCss.includes("mix-blend-mode: normal"));
-  assert.ok(globalsCss.includes("cubic-bezier(0.4, 0, 0.2, 1)"));
+  assert.ok(globalsCss.includes("cubic-bezier(0.45, 0, 0.55, 1)"));
   assert.ok(globalsCss.includes("@keyframes theme-fade-out"));
   assert.ok(globalsCss.includes("@keyframes theme-fade-in"));
 
