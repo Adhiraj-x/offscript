@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/fillers.test.ts tests/speechMetrics.test.ts tests/scoring.test.ts tests/storage.test.ts tests/transcription.test.ts tests/rateAnswer.test.ts tests/regression.test.ts tests/retryTopic.test.ts tests/homepage.test.ts"
+    "test": "node --import tsx --test tests/fillers.test.ts tests/speechMetrics.test.ts tests/scoring.test.ts tests/storage.test.ts tests/transcription.test.ts tests/rateAnswer.test.ts tests/regression.test.ts tests/retryTopic.test.ts tests/homepage.test.ts tests/topicEngine.test.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

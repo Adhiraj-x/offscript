@@ -101,7 +101,7 @@ export default function ResultView({
         {category ? <CategoryChip category={category} className="mt-4" /> : null}
         <p
           className={`text-balance leading-snug text-white/90 ${
-            category === "word" ? "mt-3 text-2xl font-medium sm:text-3xl" : "mt-3 text-lg font-medium sm:text-xl"
+            category === "word" || category === "CONCEPT" ? "mt-3 text-2xl font-medium sm:text-3xl" : "mt-3 text-lg font-medium sm:text-xl"
           }`}
         >
           {topic}

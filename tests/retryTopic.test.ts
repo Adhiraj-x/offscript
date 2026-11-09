@@ -231,7 +231,17 @@ test("result screen defines the four actions: Retry, Home, Share result, View hi
 });
 
 test("supports every topic category across retries", () => {
-  const categories: TopicCategory[] = ["word", "statement", "general", "trend"];
+  const categories: TopicCategory[] = [
+    "CONCEPT",
+    "TREND",
+    "STATEMENT",
+    "WHAT_IF",
+    "DILEMMA",
+    "word",
+    "statement",
+    "general",
+    "trend",
+  ];
 
   for (const category of categories) {
     const session = createSession({

@@ -213,13 +213,13 @@ export default function HomePage() {
           {/* Topic Selection */}
           <section className="space-y-3.5">
             <h2 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted">
-              YOUR TOPIC
+              2 — GET A TOPIC
             </h2>
             <TopicSpinner
               topic={topic}
               onPick={setTopic}
+              disabled={spinning}
               onSpinStateChange={setSpinning}
-              onError={setErrorMessage}
             />
           </section>
 

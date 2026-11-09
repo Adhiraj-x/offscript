@@ -52,22 +52,25 @@ test("CTA state transitions logically based on mode and topic selection", () => 
   assert.equal(isCtaDisabled("deep-research", { text: "Failure" }, true), true);
 });
 
-test("decorative animation words are defined and distinct from static topics", () => {
-  const ANIMATION_WORDS = [
-    "Ambition",
-    "Nostalgia",
-    "Technology",
-    "Creativity",
-    "Success",
-    "Human connection",
-  ];
+import { availableTopics } from "../lib/topicPool";
+import { pickTopic } from "../lib/topics";
 
-  assert.equal(ANIMATION_WORDS.length, 6);
-  assert.ok(ANIMATION_WORDS.includes("Ambition"));
-  assert.ok(ANIMATION_WORDS.includes("Nostalgia"));
-  assert.ok(ANIMATION_WORDS.includes("Technology"));
-  assert.ok(ANIMATION_WORDS.includes("Creativity"));
-  assert.ok(ANIMATION_WORDS.includes("Success"));
-  assert.ok(ANIMATION_WORDS.includes("Human connection"));
+test("topic candidate reel pool is available and non-empty", () => {
+  const candidates = availableTopics();
+  assert.ok(candidates.length > 0);
+  const picked = pickTopic(candidates);
+  assert.ok(picked.text.length > 0);
+  assert.ok(picked.category.length > 0);
+});
+
+test("topic-generation button labels match generation lifecycle", () => {
+  const getTopicButtonLabel = (spinning: boolean, hasTopic: boolean) => {
+    return spinning ? "Choosing..." : hasTopic ? "Get another topic" : "Get a topic";
+  };
+
+  assert.equal(getTopicButtonLabel(false, false), "Get a topic");
+  assert.equal(getTopicButtonLabel(true, false), "Choosing...");
+  assert.equal(getTopicButtonLabel(true, true), "Choosing...");
+  assert.equal(getTopicButtonLabel(false, true), "Get another topic");
 });
 
