@@ -79,7 +79,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+      const q =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("theme")
+          : null;
+      const stored =
+        q === "light" || q === "dark"
+          ? q
+          : localStorage.getItem(THEME_STORAGE_KEY);
       if (stored === "light" || stored === "dark") {
         setThemeState(stored);
         themeRef.current = stored;
