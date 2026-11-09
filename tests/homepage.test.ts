@@ -557,14 +557,14 @@ test("dark and light theme system token architecture, persistence, and toggle be
       accentContrast: "#08090b",
     },
     light: {
-      base: "#e8eee7",
-      panel: "#f0f3ed",
-      raised: "#e2e9e0",
-      line: "#d8e2d5",
-      track: "#d6e0d2",
+      base: "#dfe6dc",
+      panel: "#e8eee5",
+      raised: "#d5dfd1",
+      line: "#cbd7c7",
+      track: "#c5d2c1",
       textPrimary: "#202820",
-      textSecondary: "#637064",
-      textMuted: "#778477",
+      textSecondary: "#536452",
+      textMuted: "#647464",
       accent: "#527a25",
       accentHover: "#45671f",
       accentBg: "#527a25",
@@ -572,8 +572,8 @@ test("dark and light theme system token architecture, persistence, and toggle be
       accentText: "#527a25",
       logoDot: "#527a25",
       vizBar: "#527a25",
-      scoreSecondary: "#7a9c52",
-      selectionBg: "#d4e5c0",
+      scoreSecondary: "#709448",
+      selectionBg: "#c8dac2",
       selectionText: "#202820",
     },
   };
@@ -584,17 +584,17 @@ test("dark and light theme system token architecture, persistence, and toggle be
   assert.equal(THEME_TOKENS.dark.textPrimary, "#f0f0f0");
   assert.equal(THEME_TOKENS.dark.accent, "#c9f96c");
 
-  // Light tokens (Unified Muted Sage and Brand Olive Palette)
-  assert.equal(THEME_TOKENS.light.base, "#e8eee7");
-  assert.equal(THEME_TOKENS.light.panel, "#f0f3ed");
+  // Light tokens (Softer Muted Sage and Brand Olive Palette)
+  assert.equal(THEME_TOKENS.light.base, "#dfe6dc");
+  assert.equal(THEME_TOKENS.light.panel, "#e8eee5");
   assert.notEqual(THEME_TOKENS.light.panel, "#ffffff", "Avoid pure white #ffffff as dominant card background");
-  assert.equal(THEME_TOKENS.light.raised, "#e2e9e0");
-  assert.equal(THEME_TOKENS.light.line, "#d8e2d5");
-  assert.equal(THEME_TOKENS.light.track, "#d6e0d2");
+  assert.equal(THEME_TOKENS.light.raised, "#d5dfd1");
+  assert.equal(THEME_TOKENS.light.line, "#cbd7c7");
+  assert.equal(THEME_TOKENS.light.track, "#c5d2c1");
   assert.equal(THEME_TOKENS.light.textPrimary, "#202820");
   assert.notEqual(THEME_TOKENS.light.textPrimary, "#000000", "Avoid pure black text");
-  assert.equal(THEME_TOKENS.light.textSecondary, "#637064");
-  assert.equal(THEME_TOKENS.light.textMuted, "#778477");
+  assert.equal(THEME_TOKENS.light.textSecondary, "#536452");
+  assert.equal(THEME_TOKENS.light.textMuted, "#647464");
   assert.equal(THEME_TOKENS.light.accent, "#527a25");
   assert.equal(THEME_TOKENS.light.accentHover, "#45671f");
   assert.equal(THEME_TOKENS.light.accentBg, "#527a25");
@@ -602,8 +602,8 @@ test("dark and light theme system token architecture, persistence, and toggle be
   assert.equal(THEME_TOKENS.light.accentText, "#527a25");
   assert.equal(THEME_TOKENS.light.logoDot, "#527a25");
   assert.equal(THEME_TOKENS.light.vizBar, "#527a25");
-  assert.equal(THEME_TOKENS.light.scoreSecondary, "#7a9c52");
-  assert.equal(THEME_TOKENS.light.selectionBg, "#d4e5c0");
+  assert.equal(THEME_TOKENS.light.scoreSecondary, "#709448");
+  assert.equal(THEME_TOKENS.light.selectionBg, "#c8dac2");
   assert.equal(THEME_TOKENS.light.selectionText, "#202820");
 
   // 5. Refined light mode ambient background aura light fields & particles
