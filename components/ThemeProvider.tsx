@@ -52,8 +52,9 @@ function applyThemeToDocument(nextTheme: Theme) {
 /**
  * Runs a theme switch with the View Transitions API when available and not reduced-motion.
  * Falls back gracefully to standard synchronous DOM and state updates.
+ * Returns the transition finished promise if available, or a resolved promise.
  */
-export function runThemeTransition(updateFn: () => void) {
+export function runThemeTransition(updateFn: () => void): Promise<void> | void {
   if (
     typeof document !== "undefined" &&
     "startViewTransition" in document &&
@@ -62,15 +63,20 @@ export function runThemeTransition(updateFn: () => void) {
     !window.matchMedia("(prefers-reduced-motion: reduce)").matches
   ) {
     try {
-      document.startViewTransition(() => {
+      const transition = (
+        document as {
+          startViewTransition: (cb: () => void) => { finished?: Promise<void> };
+        }
+      ).startViewTransition(() => {
         flushSync(updateFn);
       });
-      return;
+      return transition?.finished ?? Promise.resolve();
     } catch {
       // Graceful fallback if startViewTransition throws unexpectedly
     }
   }
   updateFn();
+  return Promise.resolve();
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
