@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAmbient } from "@/components/AmbientBackground";
 import Header from "@/components/Header";
 import ModePicker from "@/components/ModePicker";
 import PrepTimer from "@/components/PrepTimer";
@@ -37,6 +38,19 @@ export default function HomePage() {
   const [streak, setStreak] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [prepAttempt, setPrepAttempt] = useState(0);
+  const { setIntensity } = useAmbient();
+
+  useEffect(() => {
+    if (phase === "setup") {
+      setIntensity("full");
+    } else if (phase === "prep") {
+      setIntensity("subtle");
+    } else if (phase === "speak" || phase === "scoring") {
+      setIntensity("minimal");
+    } else if (phase === "result" || phase === "error") {
+      setIntensity("subtle");
+    }
+  }, [phase, setIntensity]);
 
   useEffect(() => {
     setStreak(computeStreak(loadHistory()).current);
@@ -190,17 +204,20 @@ export default function HomePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 pb-24">
+    <main className="relative z-10 mx-auto w-full max-w-2xl px-6 pb-24">
       <Header streak={streak} onLogoClick={resetPractice} />
 
       {phase === "setup" ? (
         <div className="pt-4 sm:pt-6">
           {/* Hero Section */}
           <section className="pt-3 pb-1 text-center sm:pt-6 sm:pb-2">
-            <h1 className="text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
               Prepare. Speak. Improve.
             </h1>
-            <p className="mx-auto mt-4 sm:mt-5 max-w-[520px] text-balance text-sm sm:text-base leading-relaxed text-muted">
+            <p
+              className="mx-auto mt-4 sm:mt-5 max-w-[520px] text-balance text-sm sm:text-base leading-relaxed select-none text-muted"
+              style={{ color: "var(--text-muted)", userSelect: "none" }}
+            >
               Where ideas take shape and voices find confidence.
             </p>
           </section>
@@ -219,7 +236,7 @@ export default function HomePage() {
           </section>
 
           {/* Section 2: Mode Selection */}
-          <section className="mt-9 sm:mt-10 space-y-3 sm:space-y-3.5">
+          <section className="mt-6 sm:mt-10 space-y-3 sm:space-y-3.5">
             <h2 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted">
               2 — PICK A MODE
             </h2>
@@ -227,18 +244,18 @@ export default function HomePage() {
           </section>
 
           {/* Primary Action CTA */}
-          <section className="mt-7 sm:mt-8">
+          <section className="mt-5 sm:mt-8">
             <button
               type="button"
               onClick={startPrep}
               disabled={!mode || !topic || spinning}
               className={`w-full rounded-full py-4 px-8 text-sm sm:text-base font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base sm:w-auto ${
                 mode && topic && !spinning
-                  ? "border border-transparent bg-accent text-black hover:bg-accent/90 active:scale-[0.98] shadow-[0_0_24px_-8px_rgba(201,249,108,0.35)] cursor-pointer"
+                  ? "border border-transparent bg-accent text-accent-contrast hover:opacity-90 active:scale-[0.98] shadow-[0_0_24px_-8px_var(--color-topic-glow-halo)] cursor-pointer"
                   : "border border-line bg-panel text-muted cursor-not-allowed shadow-none disabled:border-line disabled:bg-panel disabled:text-muted disabled:opacity-100 disabled:cursor-not-allowed"
               }`}
             >
-              <span className={mode && topic && !spinning ? "text-black" : "text-muted"}>
+              <span className={mode && topic && !spinning ? "text-accent-contrast" : "text-muted"}>
                 {topic && mode
                   ? "Start preparation"
                   : topic && !mode
@@ -260,7 +277,7 @@ export default function HomePage() {
               {modeName(mode)}
             </span>
           </div>
-          <p className="text-balance text-lg leading-snug text-white/90">{topic.text}</p>
+          <p className="text-balance text-lg leading-snug text-foreground">{topic.text}</p>
           <div className="mt-8">
             <PrepTimer
               key={`${mode}-${topic.text}-${prepAttempt}`}
@@ -273,7 +290,7 @@ export default function HomePage() {
           <button
             type="button"
             onClick={resetPractice}
-            className="mt-6 text-sm text-muted transition-colors hover:text-white"
+            className="mt-6 text-sm text-muted transition-colors hover:text-foreground"
           >
             ← Back to setup
           </button>
@@ -288,7 +305,7 @@ export default function HomePage() {
               {modeName(mode)}
             </span>
           </div>
-          <p className="mt-3 text-balance text-xl leading-snug text-white/90">{topic.text}</p>
+          <p className="mt-3 text-balance text-xl leading-snug text-foreground">{topic.text}</p>
           <div className="mt-8">
             <Recorder onComplete={handleRecorded} onCancel={resetPractice} />
           </div>
@@ -307,7 +324,7 @@ export default function HomePage() {
                 />
               ))}
             </div>
-            <p className="mt-6 text-white/85">Listening back…</p>
+            <p className="mt-6 text-foreground/85">Listening back…</p>
             <p className="mt-2 text-sm text-muted">
               Transcribing your take, counting fillers, and writing feedback. Takes a few seconds.
             </p>
@@ -319,19 +336,19 @@ export default function HomePage() {
         <div className="pt-16">
           <div className="rounded-2xl border border-line bg-panel p-8 text-center sm:p-10">
             <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Couldn&apos;t score that</p>
-            <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-white/85">{errorMessage}</p>
+            <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-foreground/85">{errorMessage}</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <button
                 type="button"
                 onClick={() => setPhase("speak")}
-                className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-black transition-opacity hover:opacity-90"
+                className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-contrast transition-opacity hover:opacity-90"
               >
                 Record again
               </button>
               <button
                 type="button"
                 onClick={resetPractice}
-                className="rounded-full border border-line px-5 py-2.5 text-sm text-white/80 transition-colors hover:border-white/30 hover:text-white"
+                className="rounded-full border border-line px-5 py-2.5 text-sm text-foreground/80 transition-colors hover:border-foreground/30 hover:text-foreground"
               >
                 Change topic
               </button>

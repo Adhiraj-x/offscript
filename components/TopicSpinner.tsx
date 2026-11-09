@@ -167,12 +167,16 @@ export default function TopicSpinner({ topic, onPick, disabled, onSpinStateChang
 
   return (
     <div
-      className={`rounded-2xl border border-line bg-panel p-6 sm:p-10 transition-shadow duration-500 flex flex-col items-center justify-center text-center ${
+      className={`rounded-2xl border border-line bg-panel p-5 sm:p-10 transition-shadow duration-500 flex flex-col items-center justify-center text-center min-h-[220px] sm:min-h-[280px] ${
         landed ? "topic-glow" : ""
       }`}
     >
       {/* 1. Category Chip (centred, acting as inner heading) & 2. Actual Topic (large, centred) */}
-      <div className="flex min-h-[140px] sm:min-h-[170px] w-full flex-col items-center justify-center gap-3.5 sm:gap-4">
+      <div
+        className={`flex w-full flex-col items-center justify-center gap-3 sm:gap-4 ${
+          shown ? "min-h-[110px] sm:min-h-[170px]" : "min-h-[64px] sm:min-h-[170px]"
+        }`}
+      >
         {shown ? (
           <>
             <div className="flex justify-center">
@@ -181,7 +185,7 @@ export default function TopicSpinner({ topic, onPick, disabled, onSpinStateChang
             <p
               key={`${shown.text}-${swapKey}`}
               aria-live={spinning ? "off" : "polite"}
-              className={`text-balance text-white max-w-xl ${topicTextClass(shown.text)} ${
+              className={`text-balance text-foreground max-w-xl ${topicTextClass(shown.text)} ${
                 spinning ? "reel-item" : reducedMotion ? "reel-fade" : landed ? "reel-land" : ""
               }`}
             >
@@ -190,8 +194,8 @@ export default function TopicSpinner({ topic, onPick, disabled, onSpinStateChang
           </>
         ) : (
           <p
-            className="max-w-xs text-sm sm:text-base leading-relaxed text-[#8e949d]"
-            style={{ color: "#8e949d" }}
+            className="max-w-xs text-sm sm:text-base leading-relaxed text-muted"
+            style={{ color: "var(--text-muted)" }}
           >
             Your speaking topic will appear here.
           </p>
@@ -199,13 +203,13 @@ export default function TopicSpinner({ topic, onPick, disabled, onSpinStateChang
       </div>
 
       {/* 3. Topic-generation button (centred directly underneath the topic) */}
-      <div className="mt-6 flex justify-center">
+      <div className="mt-4 sm:mt-6 flex justify-center">
         <button
           type="button"
           onClick={spin}
           disabled={disabled || spinning}
           aria-busy={spinning}
-          className="flex items-center gap-2 rounded-full border border-line bg-base/50 px-5 py-2.5 text-xs sm:text-sm font-medium text-white/85 transition-all hover:border-white/30 hover:bg-base hover:text-white disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="flex items-center gap-2 rounded-full border border-line bg-raised/70 px-5 py-2.5 text-xs sm:text-sm font-medium text-foreground transition-all hover:border-foreground/30 hover:bg-raised hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           <svg
             className={`h-3.5 w-3.5 ${spinning ? "spin-icon text-accent" : ""}`}

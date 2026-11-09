@@ -4,21 +4,155 @@
 
 :root {
   color-scheme: dark;
+
+  /* Theme tokens - Dark Mode (Default) */
+  --bg-base-rgb: 8 9 11;
+  --bg-panel-rgb: 14 16 19;
+  --bg-raised-rgb: 21 24 28;
+  --border-line-rgb: 35 39 45;
+  --color-track-rgb: 35 39 45;
+  --text-muted-rgb: 142 148 157;
+  --text-primary-rgb: 240 240 240;
+  --text-secondary-rgb: 226 228 231;
+  --color-accent-rgb: 201 249 108;
+  --color-accent-bg-rgb: 201 249 108;
+  --color-accent-contrast-rgb: 8 9 11;
+
+  --bg-base: #08090b;
+  --bg-panel: #0e1013;
+  --bg-raised: #15181c;
+  --border-line: #23272d;
+  --color-track: #23272d;
+  --border-line-subtle: rgba(35, 39, 45, 0.6);
+  --border-line-hover: rgba(255, 255, 255, 0.25);
+
+  --text-primary: #f0f0f0;
+  --text-secondary: #e2e4e7;
+  --text-muted: #8e949d;
+
+  --color-accent: #c9f96c;
+  --color-accent-dim: #9dd13f;
+  --color-accent-hover: #b8ec5a;
+  --color-accent-bg: #c9f96c;
+  --color-accent-contrast: #08090b;
+  --color-accent-text: #c9f96c;
+  --color-score-secondary: rgba(255, 255, 255, 0.35);
+  --color-selection-bg: #c9f96c;
+  --color-selection-text: #08090b;
+  --color-viz-bar: #c9f96c;
+  --color-logo-dot: #c9f96c;
+
+  --color-topic-glow-ring: rgba(201, 249, 108, 0.28);
+  --color-topic-glow-halo: rgba(201, 249, 108, 0.5);
+
+  --ambient-aura-1: radial-gradient(circle at center, rgba(201, 249, 108, 0.12) 0%, rgba(20, 184, 166, 0.06) 40%, rgba(8, 9, 11, 0) 70%);
+  --ambient-aura-2: radial-gradient(circle at center, rgba(20, 184, 166, 0.10) 0%, rgba(201, 249, 108, 0.05) 42%, rgba(8, 9, 11, 0) 70%);
+  --ambient-aura-3: radial-gradient(circle at center, rgba(201, 249, 108, 0.07) 0%, rgba(13, 148, 136, 0.04) 45%, rgba(8, 9, 11, 0) 70%);
+
+  /* Ambient Particle Theme Colors */
+  --particle-lime: #c9f96c;
+  --particle-lime-glow: 0 0 6px rgba(201, 249, 108, 0.45);
+  --particle-teal: #2dd4bf;
+  --particle-teal-glow: 0 0 5px rgba(45, 212, 191, 0.4);
+  --particle-sage: #e2e8f0;
+  --particle-sage-glow: 0 0 4px rgba(226, 232, 240, 0.25);
+}
+
+html[data-theme="light"],
+html.light {
+  color-scheme: light;
+
+  /* Theme tokens - Light Mode (Unified Muted Sage & Brand Olive Palette) */
+  --bg-base-rgb: 232 238 231;
+  --bg-panel-rgb: 240 243 237;
+  --bg-raised-rgb: 226 233 224;
+  --border-line-rgb: 216 226 213;
+  --color-track-rgb: 214 224 210;
+  --text-muted-rgb: 119 132 119;
+  --text-primary-rgb: 32 40 32;
+  --text-secondary-rgb: 99 112 100;
+  --color-accent-rgb: 82 122 37;
+  --color-accent-bg-rgb: 82 122 37;
+  --color-accent-contrast-rgb: 255 255 255;
+
+  --bg-base: #e8eee7;
+  --bg-panel: #f0f3ed;
+  --bg-raised: #e2e9e0;
+  --border-line: #d8e2d5;
+  --color-track: #d6e0d2;
+  --border-line-subtle: rgba(216, 226, 213, 0.7);
+  --border-line-hover: rgba(32, 40, 32, 0.25);
+
+  --text-primary: #202820;
+  --text-secondary: #637064;
+  --text-muted: #778477;
+
+  --color-accent: #527a25;
+  --color-accent-dim: #7a9c52;
+  --color-accent-hover: #45671f;
+  --color-accent-bg: #527a25;
+  --color-accent-contrast: #ffffff;
+  --color-accent-text: #527a25;
+  --color-score-secondary: #7a9c52;
+  --color-selection-bg: #d4e5c0;
+  --color-selection-text: #202820;
+  --color-viz-bar: #527a25;
+  --color-logo-dot: #527a25;
+
+  --color-topic-glow-ring: rgba(82, 122, 37, 0.25);
+  --color-topic-glow-halo: rgba(82, 122, 37, 0.35);
+
+  /* Ambient light fields: diffuse sage-green (upper-left), muted teal (lower-right), restrained olive/lime (hero) */
+  --ambient-aura-1: radial-gradient(
+    circle at center,
+    rgba(142, 182, 138, 0.45) 0%,
+    rgba(160, 196, 156, 0.30) 30%,
+    rgba(186, 214, 183, 0.15) 55%,
+    rgba(232, 238, 231, 0) 75%
+  );
+  --ambient-aura-2: radial-gradient(
+    circle at center,
+    rgba(46, 158, 148, 0.36) 0%,
+    rgba(76, 178, 168, 0.22) 32%,
+    rgba(118, 198, 190, 0.10) 56%,
+    rgba(232, 238, 231, 0) 75%
+  );
+  --ambient-aura-3: radial-gradient(
+    circle at center,
+    rgba(165, 205, 80, 0.28) 0%,
+    rgba(182, 218, 110, 0.16) 32%,
+    rgba(205, 232, 145, 0.08) 56%,
+    rgba(232, 238, 231, 0) 75%
+  );
+
+  /* Ambient Particle Theme Colors - Light Mode (Deep Olive, Muted Dark Sage, Soft Charcoal) */
+  --particle-lime: #527a25;
+  --particle-lime-glow: 0 0 3px rgba(82, 122, 37, 0.16);
+  --particle-teal: #53634f;
+  --particle-teal-glow: 0 0 3px rgba(83, 99, 79, 0.15);
+  --particle-sage: #374239;
+  --particle-sage-glow: 0 0 3px rgba(55, 66, 57, 0.12);
 }
 
 html {
-  background-color: #08090b;
+  background-color: var(--bg-base);
 }
 
 body {
-  background-color: #08090b;
-  color: #ecedee;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: rgba(201, 249, 108, 0.22);
+  background-color: var(--color-selection-bg);
+  color: var(--color-selection-text);
+}
+
+::-moz-selection {
+  background-color: var(--color-selection-bg);
+  color: var(--color-selection-text);
 }
 
 /* Recorder equalizer */
@@ -37,7 +171,7 @@ body {
   width: 3px;
   height: 26px;
   border-radius: 999px;
-  background-color: #c9f96c;
+  background-color: var(--color-viz-bar, var(--color-accent-bg));
   transform-origin: center;
   animation: offscript-eq 900ms ease-in-out infinite;
 }
@@ -62,12 +196,12 @@ body {
 .viz-bar {
   display: block;
   width: 3px;
-  min-height: 3px;
+  min-height: 4px;
   border-radius: 999px;
-  background-color: #c9f96c;
+  background-color: var(--color-viz-bar, var(--color-accent-bg));
   transition:
-    height 140ms ease-out,
-    opacity 140ms ease-out;
+    height 90ms cubic-bezier(0.2, 0.8, 0.4, 1),
+    opacity 120ms ease-out;
 }
 
 /* Topic spinner */
@@ -134,18 +268,320 @@ body {
 
 .topic-glow {
   box-shadow:
-    0 0 0 1px rgba(201, 249, 108, 0.28),
-    0 0 50px -18px rgba(201, 249, 108, 0.5);
+    0 0 0 1px var(--color-topic-glow-ring),
+    0 0 50px -18px var(--color-topic-glow-halo);
+}
+
+/* Ambient Aura Animations */
+@keyframes ambient-aura-1 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.85;
+  }
+  33% {
+    transform: translate3d(30px, 25px, 0) scale(1.07);
+    opacity: 1;
+  }
+  66% {
+    transform: translate3d(-18px, 40px, 0) scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+@keyframes ambient-aura-2 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.8;
+  }
+  38% {
+    transform: translate3d(-30px, -20px, 0) scale(1.05);
+    opacity: 0.95;
+  }
+  72% {
+    transform: translate3d(20px, 30px, 0) scale(0.94);
+    opacity: 0.75;
+  }
+}
+
+@keyframes ambient-aura-3 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.7;
+  }
+  45% {
+    transform: translate3d(20px, -25px, 0) scale(1.05);
+    opacity: 0.85;
+  }
+  80% {
+    transform: translate3d(-25px, 18px, 0) scale(0.95);
+    opacity: 0.65;
+  }
+}
+
+/* Ambient Particle Floating Animations */
+@keyframes particle-drift-1 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translate3d(14px, -18px, 0);
+    opacity: 0.75;
+  }
+  65% {
+    transform: translate3d(-10px, -30px, 0);
+    opacity: 0.3;
+  }
+  85% {
+    transform: translate3d(-16px, -14px, 0);
+    opacity: 0.6;
+  }
+}
+
+@keyframes particle-drift-2 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.5;
+  }
+  32% {
+    transform: translate3d(-16px, 16px, 0);
+    opacity: 0.8;
+  }
+  62% {
+    transform: translate3d(12px, 28px, 0);
+    opacity: 0.35;
+  }
+  82% {
+    transform: translate3d(18px, 12px, 0);
+    opacity: 0.65;
+  }
+}
+
+@keyframes particle-drift-3 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.4;
+  }
+  28% {
+    transform: translate3d(18px, 14px, 0);
+    opacity: 0.7;
+  }
+  58% {
+    transform: translate3d(-12px, 24px, 0);
+    opacity: 0.25;
+  }
+  82% {
+    transform: translate3d(-18px, 10px, 0);
+    opacity: 0.55;
+  }
+}
+
+@keyframes particle-drift-4 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.45;
+  }
+  35% {
+    transform: translate3d(-16px, -20px, 0);
+    opacity: 0.75;
+  }
+  68% {
+    transform: translate3d(14px, -12px, 0);
+    opacity: 0.3;
+  }
+  88% {
+    transform: translate3d(18px, 10px, 0);
+    opacity: 0.6;
+  }
+}
+
+/* Default Particle Drift Mapping */
+.particle-drift-1 {
+  animation-name: particle-drift-1;
+}
+.particle-drift-2 {
+  animation-name: particle-drift-2;
+}
+.particle-drift-3 {
+  animation-name: particle-drift-3;
+}
+.particle-drift-4 {
+  animation-name: particle-drift-4;
+}
+
+/* Light Theme Particle Shimmer Animations (Subtle Dark Points Gently Shimmering) */
+@keyframes particle-drift-light-1 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.28;
+  }
+  24% {
+    opacity: 0.50;
+  }
+  48% {
+    transform: translate3d(14px, -18px, 0);
+    opacity: 0.22;
+  }
+  72% {
+    transform: translate3d(-10px, -30px, 0);
+    opacity: 0.46;
+  }
+  88% {
+    transform: translate3d(-16px, -14px, 0);
+    opacity: 0.25;
+  }
+}
+
+@keyframes particle-drift-light-2 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.25;
+  }
+  28% {
+    transform: translate3d(-16px, 16px, 0);
+    opacity: 0.48;
+  }
+  50% {
+    opacity: 0.20;
+  }
+  74% {
+    transform: translate3d(12px, 28px, 0);
+    opacity: 0.44;
+  }
+  86% {
+    transform: translate3d(18px, 12px, 0);
+    opacity: 0.30;
+  }
+}
+
+@keyframes particle-drift-light-3 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.26;
+  }
+  20% {
+    transform: translate3d(18px, 14px, 0);
+    opacity: 0.46;
+  }
+  44% {
+    opacity: 0.20;
+  }
+  68% {
+    transform: translate3d(-12px, 24px, 0);
+    opacity: 0.50;
+  }
+  86% {
+    transform: translate3d(-18px, 10px, 0);
+    opacity: 0.24;
+  }
+}
+
+@keyframes particle-drift-light-4 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.30;
+  }
+  26% {
+    opacity: 0.20;
+  }
+  50% {
+    transform: translate3d(-16px, -20px, 0);
+    opacity: 0.48;
+  }
+  74% {
+    transform: translate3d(14px, -12px, 0);
+    opacity: 0.22;
+  }
+  88% {
+    transform: translate3d(18px, 10px, 0);
+    opacity: 0.42;
+  }
+}
+
+html[data-theme="light"] .particle-drift-1,
+html.light .particle-drift-1 {
+  animation-name: particle-drift-light-1;
+}
+
+html[data-theme="light"] .particle-drift-2,
+html.light .particle-drift-2 {
+  animation-name: particle-drift-light-2;
+}
+
+html[data-theme="light"] .particle-drift-3,
+html.light .particle-drift-3 {
+  animation-name: particle-drift-light-3;
+}
+
+html[data-theme="light"] .particle-drift-4,
+html.light .particle-drift-4 {
+  animation-name: particle-drift-light-4;
+}
+
+/* Ambient Background Container & Intensity States */
+.ambient-container {
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+
+.ambient-particle-lime {
+  background-color: var(--particle-lime);
+  box-shadow: var(--particle-lime-glow);
+}
+
+.ambient-particle-teal {
+  background-color: var(--particle-teal);
+  box-shadow: var(--particle-teal-glow);
+}
+
+.ambient-particle-sage {
+  background-color: var(--particle-sage);
+  box-shadow: var(--particle-sage-glow);
+}
+
+html[data-theme="light"] .text-accent,
+html.light .text-accent {
+  color: var(--color-accent-text);
+}
+
+html[data-theme="light"] .border-accent,
+html.light .border-accent {
+  border-color: var(--color-accent-text);
+}
+
+.ambient-container[data-intensity="full"] {
+  opacity: 1;
+}
+
+.ambient-container[data-intensity="subtle"] {
+  opacity: 0.65;
+}
+
+.ambient-container[data-intensity="minimal"] {
+  opacity: 0.28;
+}
+
+/* Visibility pause */
+.ambient-container[data-paused="true"] .ambient-aura-layer,
+.ambient-container[data-paused="true"] .ambient-particle-item {
+  animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ambient-container {
+    transition: none !important;
+  }
+
   .eq-bar,
   .rec-dot,
   .spin-icon,
   .reel-item,
   .reel-land,
-  .reel-fade {
-    animation: none;
+  .reel-fade,
+  .ambient-aura-layer,
+  .ambient-particle-item {
+    animation: none !important;
+    transform: none !important;
   }
 
   .viz-bar {

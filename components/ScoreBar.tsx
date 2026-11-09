@@ -11,7 +11,7 @@ export default function ScoreBar({ label, value, accent, hint, band }: Props) {
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
-        <span className={accent ? "text-sm font-medium text-white" : "text-sm text-muted"}>
+        <span className={accent ? "text-sm font-medium text-foreground" : "text-sm text-muted"}>
           {label}
           {hint ? <span className="ml-2 text-xs text-muted/60">{hint}</span> : null}
         </span>
@@ -19,7 +19,7 @@ export default function ScoreBar({ label, value, accent, hint, band }: Props) {
           {band ? (
             <span
               className={`text-[10px] uppercase tracking-[0.16em] ${
-                accent ? "font-medium text-accent/80" : "text-muted/70"
+                accent ? "font-medium text-accent" : "text-muted"
               }`}
             >
               {band}
@@ -27,7 +27,7 @@ export default function ScoreBar({ label, value, accent, hint, band }: Props) {
           ) : null}
           <span
             className={`shrink-0 font-mono tabular-nums ${
-              accent ? "text-xl font-semibold text-accent" : "text-base text-white/90"
+              accent ? "text-xl font-semibold text-accent" : "text-base text-foreground/90"
             }`}
           >
             {safe}
@@ -35,12 +35,12 @@ export default function ScoreBar({ label, value, accent, hint, band }: Props) {
         </span>
       </div>
       <div
-        className={`w-full overflow-hidden rounded-full bg-line ${
+        className={`w-full overflow-hidden rounded-full bg-track ${
           accent ? "mt-2.5 h-2" : "mt-2 h-1.5"
         }`}
       >
         <div
-          className={`h-full rounded-full ${accent ? "bg-accent" : "bg-white/35"}`}
+          className={`h-full rounded-full ${accent ? "bg-accent" : "bg-[var(--color-score-secondary)]"}`}
           style={{ width: `${safe}%` }}
         />
       </div>

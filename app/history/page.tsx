@@ -37,7 +37,7 @@ export default function HistoryPage() {
   const streak = useMemo(() => computeStreak(sessions ?? []), [sessions]);
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 pb-24">
+    <main className="relative z-10 mx-auto w-full max-w-3xl px-6 pb-24">
       <Header streak={streak.current} />
 
       <div className="pt-10">
@@ -60,7 +60,7 @@ export default function HistoryPage() {
                     <span>{streak.current} day streak</span>
                   </span>
                 ) : (
-                  <span className="text-white/70">No streak yet — practice today to start one.</span>
+                  <span className="text-muted">No streak yet — practice today to start one.</span>
                 )}
               </p>
               <p className="text-xs text-muted">
@@ -77,7 +77,7 @@ export default function HistoryPage() {
               <p className="text-[11px] uppercase tracking-[0.22em] text-muted">
                 {sessions.length} {sessions.length === 1 ? "session" : "sessions"}
               </p>
-              <Link href="/" className="text-sm text-muted transition-colors hover:text-white">
+              <Link href="/" className="text-sm text-muted transition-colors hover:text-foreground">
                 Practice →
               </Link>
             </div>

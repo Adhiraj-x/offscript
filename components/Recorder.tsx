@@ -7,12 +7,28 @@ const MAX_SECONDS = 120;
 const MIME_CANDIDATES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
 
 /** RMS below this counts as room noise, so the visualizer reads as a flat line. */
-const NOISE_GATE_RMS = 0.02;
+const NOISE_GATE_RMS = 0.014;
 const BAR_COUNT = 9;
-const MIN_BAR_PX = 3;
+const IDLE_BAR_PX = 4;
+const MIN_ACTIVE_BAR_PX = 7;
 const MAX_BAR_PX = 32;
-/** Voice energy lives in the lower bins; ignore the top of the spectrum. */
-const FREQ_CEILING_RATIO = 0.45;
+
+/**
+ * Speech frequency bands for all 9 visualizer elements (fftSize = 256, bin resolution ~180 Hz).
+ * Spans ~180 Hz to ~5200 Hz across voice fundamentals, formants, clarity, and sibilance.
+ * Each band features an individualized sensitivity gain and weight to prevent mechanical synchronization.
+ */
+export const SPEECH_BANDS = [
+  { start: 1, end: 2, gain: 1.05, weight: 1.00 }, // ~180-450 Hz: fundamental voice pitch & chest
+  { start: 2, end: 3, gain: 1.15, weight: 1.06 }, // ~350-650 Hz: lower vowel body / F1
+  { start: 3, end: 4, gain: 1.25, weight: 0.96 }, // ~550-850 Hz: core vowel warmth
+  { start: 4, end: 6, gain: 1.40, weight: 1.12 }, // ~750-1250 Hz: mid-vowel transition
+  { start: 6, end: 9, gain: 1.65, weight: 1.04 }, // ~1100-1800 Hz: vocal articulation / F2
+  { start: 9, end: 13, gain: 1.90, weight: 0.98 }, // ~1650-2550 Hz: speech projection / clarity
+  { start: 13, end: 17, gain: 2.20, weight: 1.14 }, // ~2400-3300 Hz: consonant definition / F3
+  { start: 17, end: 22, gain: 2.55, weight: 1.08 }, // ~3100-4200 Hz: sibilance & high clarity
+  { start: 22, end: 28, gain: 2.90, weight: 1.16 }, // ~4000-5200 Hz: upper consonant articulation
+];
 
 function pickMimeType(): string | undefined {
   if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") {
@@ -87,7 +103,10 @@ export default function Recorder({ onComplete, onCancel }: Props) {
     }
 
     for (const bar of barsRef.current) {
-      if (bar) bar.style.height = `${MIN_BAR_PX}px`;
+      if (bar) {
+        bar.style.height = `${IDLE_BAR_PX}px`;
+        bar.style.opacity = "0.35";
+      }
     }
     if (levelRef.current) levelRef.current.style.width = "0%";
   }, []);
@@ -114,7 +133,7 @@ export default function Recorder({ onComplete, onCancel }: Props) {
     const source = context.createMediaStreamSource(stream);
     const analyser = context.createAnalyser();
     analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.8;
+    analyser.smoothingTimeConstant = 0.75;
     source.connect(analyser);
     // Deliberately not connected to context.destination: no monitoring, no echo.
 
@@ -123,7 +142,6 @@ export default function Recorder({ onComplete, onCancel }: Props) {
 
     const timeData = new Uint8Array(analyser.fftSize);
     const freqData = new Uint8Array(analyser.frequencyBinCount);
-    const ceiling = Math.max(1, Math.floor(analyser.frequencyBinCount * FREQ_CEILING_RATIO));
     const simpleLevel = prefersReducedMotion();
 
     const tick = () => {
@@ -137,7 +155,8 @@ export default function Recorder({ onComplete, onCancel }: Props) {
       }
       const rms = Math.sqrt(sum / timeData.length);
       const speaking = rms >= NOISE_GATE_RMS;
-      const volume = Math.min(1, rms / (NOISE_GATE_RMS * 4));
+      // Perceptually smooth volume factor above noise gate
+      const volume = Math.min(1, Math.max(0, (rms - NOISE_GATE_RMS) / 0.07));
 
       if (simpleLevel) {
         if (levelRef.current) {
@@ -153,17 +172,33 @@ export default function Recorder({ onComplete, onCancel }: Props) {
         if (!bar) continue;
 
         if (!speaking) {
-          // Gated silence: everything returns to the baseline, eased by CSS.
-          bar.style.height = `${MIN_BAR_PX}px`;
-          bar.style.opacity = "0.4";
+          // Gated silence: all 9 elements settle into the subtle idle capsule baseline
+          bar.style.height = `${IDLE_BAR_PX}px`;
+          bar.style.opacity = "0.35";
           continue;
         }
 
-        const bin = Math.min(ceiling - 1, Math.floor((index / BAR_COUNT) * ceiling));
-        const energy = (freqData[bin] ?? 0) / 255;
-        const scaled = Math.min(1, energy * (0.45 + volume * 1.7));
-        bar.style.height = `${Math.round(MIN_BAR_PX + scaled * (MAX_BAR_PX - MIN_BAR_PX))}px`;
-        bar.style.opacity = "1";
+        const band = SPEECH_BANDS[index] ?? SPEECH_BANDS[0];
+        let bandSum = 0;
+        const binCount = band.end - band.start + 1;
+        for (let b = band.start; b <= band.end; b += 1) {
+          bandSum += freqData[b] ?? 0;
+        }
+        const avgBinEnergy = bandSum / (binCount * 255);
+
+        // Modulated frequency energy tailored per band
+        const rawBandEnergy = Math.min(1, avgBinEnergy * band.gain * band.weight);
+
+        // Vocal envelope coupling: frequency band activity (72%) + overall RMS vocal energy (28%)
+        // This ensures every element, including upper articulation bands 7 & 8, responds organically
+        const speechEnergy = Math.min(1, rawBandEnergy * 0.72 + volume * 0.28 * band.weight);
+
+        // Dynamic height range above the subtle active minimum height
+        const activeRange = MAX_BAR_PX - MIN_ACTIVE_BAR_PX;
+        const targetHeight = Math.round(MIN_ACTIVE_BAR_PX + speechEnergy * activeRange);
+
+        bar.style.height = `${targetHeight}px`;
+        bar.style.opacity = `${Math.min(1, 0.85 + volume * 0.15)}`;
       }
     };
 
@@ -290,19 +325,19 @@ export default function Recorder({ onComplete, onCancel }: Props) {
     return (
       <div className="rounded-2xl border border-red-400/25 bg-red-400/[0.06] p-8 text-center">
         <p className="text-[11px] uppercase tracking-[0.22em] text-red-300/80">Recording problem</p>
-        <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/85">{error}</p>
+        <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-foreground/85">{error}</p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-black transition-opacity hover:opacity-90"
+            className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-contrast transition-opacity hover:opacity-90"
           >
             Try again
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-full border border-line px-5 py-2.5 text-sm text-white/80 transition-colors hover:border-white/30 hover:text-white"
+            className="rounded-full border border-line px-5 py-2.5 text-sm text-foreground/80 transition-colors hover:border-foreground/30 hover:text-foreground"
           >
             Change topic
           </button>
@@ -317,7 +352,7 @@ export default function Recorder({ onComplete, onCancel }: Props) {
     <div className="rounded-2xl border border-line bg-panel p-8 text-center sm:p-10">
       <div className="flex items-center justify-center gap-2.5">
         <span className="rec-dot h-2.5 w-2.5 rounded-full bg-red-500" />
-        <span className="text-[11px] uppercase tracking-[0.22em] text-red-300">
+        <span className="text-[11px] uppercase tracking-[0.22em] text-red-500 dark:text-red-300">
           {status === "recording" ? "Recording" : "Starting mic…"}
         </span>
       </div>
@@ -328,7 +363,7 @@ export default function Recorder({ onComplete, onCancel }: Props) {
 
       {reducedMotion ? (
         <div className="mt-7 flex h-8 items-center justify-center" aria-hidden>
-          <span className="relative block h-1 w-40 overflow-hidden rounded-full bg-line">
+          <span className="relative block h-1 w-40 overflow-hidden rounded-full bg-track">
             <span
               ref={levelRef}
               className="absolute inset-y-0 left-0 block rounded-full bg-accent"
@@ -345,7 +380,7 @@ export default function Recorder({ onComplete, onCancel }: Props) {
                 barsRef.current[index] = node;
               }}
               className="viz-bar"
-              style={{ height: `${MIN_BAR_PX}px`, opacity: 0.4 }}
+              style={{ height: `${IDLE_BAR_PX}px`, opacity: 0.35 }}
             />
           ))}
         </div>
@@ -360,14 +395,14 @@ export default function Recorder({ onComplete, onCancel }: Props) {
           type="button"
           onClick={stop}
           disabled={status !== "recording"}
-          className="rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-accent-contrast transition-all hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base disabled:cursor-not-allowed disabled:opacity-40"
         >
           Stop &amp; rate
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full border border-line px-5 py-2.5 text-sm text-white/70 transition-colors hover:border-white/30 hover:text-white"
+          className="rounded-full border border-line bg-raised/70 px-5 py-2.5 text-sm font-medium text-foreground transition-all hover:border-foreground/30 hover:bg-raised hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base"
         >
           Cancel
         </button>

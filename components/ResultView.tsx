@@ -24,7 +24,7 @@ function Stat({ label, value, note }: { label: string; value: string; note?: str
   return (
     <div className="rounded-xl border border-line bg-base/50 p-3.5">
       <p className="text-[10px] uppercase tracking-[0.16em] text-muted">{label}</p>
-      <p className="mt-1.5 font-mono text-lg tabular-nums text-white">{value}</p>
+      <p className="mt-1.5 font-mono text-lg tabular-nums text-foreground">{value}</p>
       {note ? <p className="mt-0.5 text-[11px] leading-snug text-muted/70">{note}</p> : null}
     </div>
   );
@@ -100,7 +100,7 @@ export default function ResultView({
         </div>
         {category ? <CategoryChip category={category} className="mt-4" /> : null}
         <p
-          className={`text-balance leading-snug text-white/90 ${
+          className={`text-balance leading-snug text-foreground ${
             category === "word" || category === "CONCEPT" ? "mt-3 text-2xl font-medium sm:text-3xl" : "mt-3 text-lg font-medium sm:text-xl"
           }`}
         >
@@ -144,12 +144,20 @@ export default function ResultView({
 
         {/* Part A: Main Takeaway */}
         <div className="mt-4">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/70">Main takeaway</p>
-          <p className="mt-2 text-[15px] sm:text-base leading-relaxed text-white/95 font-medium">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">Main takeaway</p>
+          <p
+            className="mt-2 text-[15px] sm:text-base leading-relaxed font-medium text-foreground"
+            style={{ color: "var(--text-primary)" }}
+          >
             {mainTakeaway}
           </p>
           {result.mainTakeaway && result.feedback && result.feedback !== result.mainTakeaway ? (
-            <p className="mt-2 text-sm leading-relaxed text-white/80">{result.feedback}</p>
+            <p
+              className="mt-2 text-sm leading-relaxed text-secondary"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {result.feedback}
+            </p>
           ) : null}
         </div>
 
@@ -160,29 +168,37 @@ export default function ResultView({
             {strengths.length > 0 ? (
               <ul className="mt-3 space-y-2.5">
                 {strengths.map((item, index) => (
-                  <li key={`strength-${index}`} className="flex gap-2.5 text-sm leading-relaxed text-white/80">
+                  <li
+                    key={`strength-${index}`}
+                    className="flex gap-2.5 text-sm leading-relaxed text-secondary"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
                     <span>{item}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-white/60">No specific strengths recorded.</p>
+              <p className="mt-3 text-sm text-muted">No specific strengths recorded.</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/75">What to improve</p>
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">What to improve</p>
             {improvements.length > 0 ? (
               <ul className="mt-3 space-y-2.5">
                 {improvements.map((item, index) => (
-                  <li key={`improvement-${index}`} className="flex gap-2.5 text-sm leading-relaxed text-white/80">
-                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
+                  <li
+                    key={`improvement-${index}`}
+                    className="flex gap-2.5 text-sm leading-relaxed text-secondary"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-muted" />
                     <span>{item}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-white/60">No specific improvements recorded.</p>
+              <p className="mt-3 text-sm text-muted">No specific improvements recorded.</p>
             )}
           </div>
         </div>
@@ -193,7 +209,10 @@ export default function ResultView({
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-accent">
               Focus on your next attempt
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-white/90 sm:text-[15px]">
+            <p
+              className="mt-2 text-sm leading-relaxed text-foreground sm:text-[15px]"
+              style={{ color: "var(--text-primary)" }}
+            >
               {nextAttemptFocus}
             </p>
           </div>
@@ -211,7 +230,7 @@ export default function ResultView({
         >
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h3 className="text-sm font-semibold tracking-wide text-white sm:text-base">
+              <h3 className="text-sm font-semibold tracking-wide text-foreground sm:text-base">
                 Advanced Speech Analysis
               </h3>
               <span className="rounded-full border border-line bg-base/60 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-muted">
@@ -376,7 +395,10 @@ export default function ResultView({
           <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Transcript</p>
           <span className="font-mono text-[11px] tabular-nums text-muted/70">{wordCount} words</span>
         </div>
-        <p className="mt-4 max-h-64 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-white/75">
+        <p
+          className="mt-4 max-h-64 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-secondary"
+          style={{ color: "var(--text-secondary)" }}
+        >
           {result.transcript}
         </p>
       </div>
@@ -389,7 +411,7 @@ export default function ResultView({
               <button
                 type="button"
                 onClick={onRetry}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-accent px-6 text-sm font-medium text-black transition-all hover:bg-accent/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-accent px-6 text-sm font-medium text-accent-contrast transition-all hover:bg-accent/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base"
               >
                 Retry
               </button>
@@ -399,8 +421,8 @@ export default function ResultView({
               onClick={onRestart}
               className={
                 onRetry
-                  ? "inline-flex h-10 items-center justify-center rounded-full border border-line bg-panel/60 px-5 text-sm text-white/85 transition-all hover:border-white/30 hover:bg-panel hover:text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-base"
-                  : "inline-flex h-10 items-center justify-center rounded-full bg-accent px-6 text-sm font-medium text-black transition-all hover:bg-accent/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+                  ? "inline-flex h-10 items-center justify-center rounded-full border border-line bg-raised/70 px-5 text-sm font-medium text-foreground transition-all hover:border-foreground/30 hover:bg-raised hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+                  : "inline-flex h-10 items-center justify-center rounded-full bg-accent px-6 text-sm font-medium text-accent-contrast transition-all hover:bg-accent/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base"
               }
             >
               Home
@@ -418,7 +440,7 @@ export default function ResultView({
             />
             <Link
               href="/history"
-              className="inline-flex h-10 items-center justify-center rounded-full border border-line bg-panel/60 px-5 text-sm text-white/85 transition-all hover:border-white/30 hover:bg-panel hover:text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-line bg-raised/70 px-5 text-sm font-medium text-foreground transition-all hover:border-foreground/30 hover:bg-raised hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base"
             >
               View history
             </Link>
