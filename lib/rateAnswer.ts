@@ -78,18 +78,29 @@ export const MAX_SCORING_ATTEMPTS = 2;
 /**
  * Detects whether an upstream API error is specifically Groq's completion-token exhaustion
  * in JSON mode (400 json_validate_failed: max completion tokens reached before generating a valid document).
- * Unrelated 400 errors, 429 rate limits, and 500 server errors strictly return false.
+ *
+ * Groq packages this error with `code: "json_validate_failed"` and specifies the token exhaustion
+ * reason inside `failed_generation` (e.g. `error.failed_generation`).
+ *
+ * Unrelated 400 errors, generic schema errors, 429 rate limits, and 500 server errors strictly return false.
  */
 export function isTokenExhaustionError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
 
   const errObj = error as Record<string, unknown>;
+  const nestedError =
+    errObj.error && typeof errObj.error === "object"
+      ? (errObj.error as Record<string, unknown>)
+      : undefined;
+
   const status =
     typeof errObj.status === "number"
       ? errObj.status
       : typeof errObj.statusCode === "number"
         ? errObj.statusCode
-        : undefined;
+        : typeof nestedError?.status === "number"
+          ? (nestedError.status as number)
+          : undefined;
 
   // Never treat 429 rate limit or 5xx server errors as token exhaustion
   if (status !== undefined && status !== 400 && status !== 422) {
@@ -97,32 +108,58 @@ export function isTokenExhaustionError(error: unknown): boolean {
   }
 
   const code = String(errObj.code ?? "");
-  const message = String(errObj.message ?? "").toLowerCase();
-
-  const nestedError =
-    errObj.error && typeof errObj.error === "object"
-      ? (errObj.error as Record<string, unknown>)
-      : undefined;
-
+  const type = String(errObj.type ?? "");
   const nestedCode = String(nestedError?.code ?? "");
+  const nestedType = String(nestedError?.type ?? "");
+
+  const message = String(errObj.message ?? "").toLowerCase();
   const nestedMessage = String(nestedError?.message ?? "").toLowerCase();
 
-  const hasJsonValidateCode =
-    code === "json_validate_failed" || nestedCode === "json_validate_failed";
+  const extractString = (val: unknown): string => {
+    if (typeof val === "string") return val.toLowerCase();
+    if (val && typeof val === "object") {
+      try {
+        return JSON.stringify(val).toLowerCase();
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  };
 
-  const hasTokenExhaustionMessage =
-    message.includes("max completion tokens") ||
-    message.includes("max_completion_tokens") ||
-    message.includes("tokens reached before generating a valid document") ||
-    nestedMessage.includes("max completion tokens") ||
-    nestedMessage.includes("max_completion_tokens") ||
-    nestedMessage.includes("tokens reached before generating a valid document");
+  const failedGeneration = extractString(errObj.failed_generation ?? errObj.failedGeneration);
+  const nestedFailedGeneration = extractString(
+    nestedError?.failed_generation ?? nestedError?.failedGeneration
+  );
 
-  const messageContainsBoth =
-    message.includes("json_validate_failed") &&
-    (message.includes("max completion tokens") || message.includes("tokens reached"));
+  // Must be specifically classified as a JSON validation error
+  const hasJsonValidationClassification =
+    code === "json_validate_failed" ||
+    nestedCode === "json_validate_failed" ||
+    type === "json_validate_failed" ||
+    nestedType === "json_validate_failed" ||
+    message.includes("json_validate_failed") ||
+    nestedMessage.includes("json_validate_failed");
 
-  return (hasJsonValidateCode && hasTokenExhaustionMessage) || messageContainsBoth;
+  if (!hasJsonValidationClassification) {
+    return false;
+  }
+
+  // Must specifically indicate token exhaustion in the message or failed_generation
+  const tokenPhrases = [
+    "max completion tokens",
+    "max_completion_tokens",
+    "tokens reached before generating a valid document",
+    "tokens reached before generating",
+  ];
+
+  const inspectTargets = [message, nestedMessage, failedGeneration, nestedFailedGeneration];
+
+  const hasTokenExhaustionIndicator = inspectTargets.some((target) =>
+    tokenPhrases.some((phrase) => target.includes(phrase))
+  );
+
+  return hasTokenExhaustionIndicator;
 }
 
 export function statusOf(error: unknown): number | undefined {
