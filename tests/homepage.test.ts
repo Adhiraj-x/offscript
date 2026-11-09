@@ -15,6 +15,7 @@ import {
   computeBandEnergy,
   smoothBarValue,
 } from "../components/Recorder";
+import { runThemeTransition } from "../components/ThemeProvider";
 
 test("MODES configuration has exact names, prep seconds and descriptions", () => {
   assert.equal(MODES.length, 2);
@@ -644,4 +645,96 @@ test("dark and light theme system token architecture, persistence, and toggle be
   const LIGHT_PARTICLE_OPACITY_RANGE = { min: 0.20, max: 0.50 };
   assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.min >= 0.15 && LIGHT_PARTICLE_OPACITY_RANGE.min <= 0.25);
   assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.max >= 0.45 && LIGHT_PARTICLE_OPACITY_RANGE.max <= 0.60);
+});
+
+test("smooth view transition theme crossfade architecture and reduced motion handling", () => {
+  // 1. Verify CSS rules in app/globals.css
+  const globalsCss = fs.readFileSync(path.join(process.cwd(), "app", "globals.css"), "utf-8");
+  assert.ok(globalsCss.includes("::view-transition-old(root)"));
+  assert.ok(globalsCss.includes("::view-transition-new(root)"));
+  assert.ok(globalsCss.includes("animation-duration: 280ms"));
+  assert.ok(globalsCss.includes("mix-blend-mode: normal"));
+  assert.ok(globalsCss.includes("cubic-bezier(0.4, 0, 0.2, 1)"));
+  assert.ok(globalsCss.includes("@keyframes theme-fade-out"));
+  assert.ok(globalsCss.includes("@keyframes theme-fade-in"));
+
+  // Verify reduced-motion support disables view transition animations
+  assert.ok(globalsCss.includes("::view-transition-old(root)"));
+  assert.ok(globalsCss.includes("animation: none !important"));
+
+  // 2. Test runThemeTransition execution in headless / fallback environment (no startViewTransition)
+  let updated = false;
+  runThemeTransition(() => {
+    updated = true;
+  });
+  assert.equal(updated, true, "Callback must execute synchronously when startViewTransition is unsupported");
+
+  // 3. Test runThemeTransition with mock startViewTransition API
+  let startViewTransitionCalled = false;
+  let mockCallbackExecuted = false;
+
+  const originalDocument = globalThis.document;
+  const originalWindow = globalThis.window;
+
+  try {
+    globalThis.window = {
+      matchMedia: (query: string) => ({
+        matches: false, // Not reduced motion
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }),
+    } as unknown as Window & typeof globalThis;
+
+    globalThis.document = {
+      startViewTransition: (cb: () => void) => {
+        startViewTransitionCalled = true;
+        cb();
+        return {
+          finished: Promise.resolve(),
+          ready: Promise.resolve(),
+          updateCallbackDone: Promise.resolve(),
+          skipTransition: () => {},
+        };
+      },
+    } as unknown as Document;
+
+    runThemeTransition(() => {
+      mockCallbackExecuted = true;
+    });
+
+    assert.equal(startViewTransitionCalled, true, "Must invoke document.startViewTransition when supported");
+    assert.equal(mockCallbackExecuted, true, "Must execute update callback inside view transition");
+
+    // 4. Test reduced-motion bypass
+    startViewTransitionCalled = false;
+    let reducedMotionCallbackExecuted = false;
+
+    globalThis.window = {
+      matchMedia: (query: string) => ({
+        matches: query.includes("prefers-reduced-motion"), // Reduced motion is TRUE
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }),
+    } as unknown as Window & typeof globalThis;
+
+    runThemeTransition(() => {
+      reducedMotionCallbackExecuted = true;
+    });
+
+    assert.equal(startViewTransitionCalled, false, "Must NOT invoke startViewTransition when prefers-reduced-motion is active");
+    assert.equal(reducedMotionCallbackExecuted, true, "Callback must execute immediately when reduced-motion is active");
+  } finally {
+    globalThis.document = originalDocument;
+    globalThis.window = originalWindow;
+  }
 });

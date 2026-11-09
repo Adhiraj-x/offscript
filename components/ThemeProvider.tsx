@@ -6,8 +6,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 
 export type Theme = "dark" | "light";
 
@@ -47,18 +49,45 @@ function applyThemeToDocument(nextTheme: Theme) {
   }
 }
 
+/**
+ * Runs a theme switch with the View Transitions API when available and not reduced-motion.
+ * Falls back gracefully to standard synchronous DOM and state updates.
+ */
+export function runThemeTransition(updateFn: () => void) {
+  if (
+    typeof document !== "undefined" &&
+    "startViewTransition" in document &&
+    typeof (document as { startViewTransition?: unknown }).startViewTransition === "function" &&
+    typeof window !== "undefined" &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    try {
+      document.startViewTransition(() => {
+        flushSync(updateFn);
+      });
+      return;
+    } catch {
+      // Graceful fallback if startViewTransition throws unexpectedly
+    }
+  }
+  updateFn();
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("dark");
+  const themeRef = useRef<Theme>("dark");
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(THEME_STORAGE_KEY);
       if (stored === "light" || stored === "dark") {
         setThemeState(stored);
+        themeRef.current = stored;
         applyThemeToDocument(stored);
       } else {
         // Strict requirement: Fresh visit defaults to dark; do not switch to OS light theme
         setThemeState("dark");
+        themeRef.current = "dark";
         applyThemeToDocument("dark");
       }
     } catch {
@@ -67,8 +96,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
-    applyThemeToDocument(next);
+    if (themeRef.current === next) return;
+    themeRef.current = next;
+
+    runThemeTransition(() => {
+      setThemeState(next);
+      applyThemeToDocument(next);
+    });
+
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
@@ -77,17 +112,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((current) => {
-      const next: Theme = current === "dark" ? "light" : "dark";
-      applyThemeToDocument(next);
-      try {
-        localStorage.setItem(THEME_STORAGE_KEY, next);
-      } catch {
-        // Safe no-op
-      }
-      return next;
-    });
-  }, []);
+    const next: Theme = themeRef.current === "dark" ? "light" : "dark";
+    setTheme(next);
+  }, [setTheme]);
 
   const value = useMemo(
     () => ({
