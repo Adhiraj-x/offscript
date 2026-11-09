@@ -4,11 +4,16 @@
  */
 
 import OpenAI from "openai";
-import { GROQ_BASE_URL, GROQ_CHAT_MODEL } from "./groq";
+import {
+  GROQ_BASE_URL,
+  GROQ_CHAT_MODEL,
+  GROQ_SCORING_MODEL,
+  GROQ_SCORING_FALLBACK_MODEL,
+} from "./groq";
 
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/";
 export const GEMINI_TIMEOUT_MS = 10_000;
-export const GROQ_TIMEOUT_MS = 8_000;
+export const GROQ_TIMEOUT_MS = 25_000;
 
 /**
  * Google retires model names often, so this must come from the environment.
@@ -16,7 +21,7 @@ export const GROQ_TIMEOUT_MS = 8_000;
  */
 export const GEMINI_TOPIC_MODEL = process.env.GEMINI_TOPIC_MODEL || "gemini-3.5-flash-lite";
 
-export { GROQ_CHAT_MODEL };
+export { GROQ_CHAT_MODEL, GROQ_SCORING_MODEL, GROQ_SCORING_FALLBACK_MODEL };
 
 /** Gemini through its OpenAI-compatible endpoint. Null when no key is configured. */
 export function getGeminiClient(): OpenAI | null {
