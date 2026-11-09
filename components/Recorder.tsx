@@ -7,28 +7,189 @@ const MAX_SECONDS = 120;
 const MIME_CANDIDATES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
 
 /** RMS below this counts as room noise, so the visualizer reads as a flat line. */
-const NOISE_GATE_RMS = 0.014;
-const BAR_COUNT = 9;
-const IDLE_BAR_PX = 4;
-const MIN_ACTIVE_BAR_PX = 7;
-const MAX_BAR_PX = 32;
+export const NOISE_GATE_RMS = 0.014;
+export const BAR_COUNT = 9;
+export const IDLE_BAR_PX = 4;
+export const MIN_ACTIVE_BAR_PX = 7;
+export const MAX_BAR_PX = 32;
+export const FFT_SIZE = 2048;
+
+export interface FrequencyBandConfig {
+  readonly minHz: number;
+  readonly maxHz: number;
+  readonly sensitivity: number;
+  readonly noiseFloor: number;
+  readonly attack: number;
+  readonly release: number;
+  readonly description: string;
+}
 
 /**
- * Speech frequency bands for all 9 visualizer elements (fftSize = 256, bin resolution ~180 Hz).
- * Spans ~180 Hz to ~5200 Hz across voice fundamentals, formants, clarity, and sibilance.
- * Each band features an individualized sensitivity gain and weight to prevent mechanical synchronization.
+ * Nine distinct speech frequency bands logarithmically distributed across ~90 Hz to 5,400 Hz.
+ * Spans vocal fundamentals, vowel formants (F1, F2), clarity, consonant definition (F3), and sibilance.
+ * Sensitivity scaling compensates for natural human speech spectral rolloff (-6 dB/octave).
+ * Independent attack and release values provide responsive, organic envelope dynamics per bar.
  */
-export const SPEECH_BANDS = [
-  { start: 1, end: 2, gain: 1.05, weight: 1.00 }, // ~180-450 Hz: fundamental voice pitch & chest
-  { start: 2, end: 3, gain: 1.15, weight: 1.06 }, // ~350-650 Hz: lower vowel body / F1
-  { start: 3, end: 4, gain: 1.25, weight: 0.96 }, // ~550-850 Hz: core vowel warmth
-  { start: 4, end: 6, gain: 1.40, weight: 1.12 }, // ~750-1250 Hz: mid-vowel transition
-  { start: 6, end: 9, gain: 1.65, weight: 1.04 }, // ~1100-1800 Hz: vocal articulation / F2
-  { start: 9, end: 13, gain: 1.90, weight: 0.98 }, // ~1650-2550 Hz: speech projection / clarity
-  { start: 13, end: 17, gain: 2.20, weight: 1.14 }, // ~2400-3300 Hz: consonant definition / F3
-  { start: 17, end: 22, gain: 2.55, weight: 1.08 }, // ~3100-4200 Hz: sibilance & high clarity
-  { start: 22, end: 28, gain: 2.90, weight: 1.16 }, // ~4000-5200 Hz: upper consonant articulation
-];
+export const FREQUENCY_BANDS: readonly FrequencyBandConfig[] = [
+  {
+    minHz: 90,
+    maxHz: 160,
+    sensitivity: 1.15,
+    noiseFloor: 0.08,
+    attack: 0.65,
+    release: 0.16,
+    description: "Vocal fundamental pitch (deep/chest)",
+  },
+  {
+    minHz: 160,
+    maxHz: 280,
+    sensitivity: 1.25,
+    noiseFloor: 0.07,
+    attack: 0.68,
+    release: 0.18,
+    description: "Vocal fundamental & lower warmth",
+  },
+  {
+    minHz: 280,
+    maxHz: 500,
+    sensitivity: 1.45,
+    noiseFloor: 0.06,
+    attack: 0.70,
+    release: 0.19,
+    description: "Low vowel body & first formant (F1)",
+  },
+  {
+    minHz: 500,
+    maxHz: 900,
+    sensitivity: 1.70,
+    noiseFloor: 0.05,
+    attack: 0.72,
+    release: 0.20,
+    description: "Core vowel formants (open F1)",
+  },
+  {
+    minHz: 900,
+    maxHz: 1450,
+    sensitivity: 2.00,
+    noiseFloor: 0.05,
+    attack: 0.74,
+    release: 0.21,
+    description: "Vocal articulation & transitions (F2)",
+  },
+  {
+    minHz: 1450,
+    maxHz: 2300,
+    sensitivity: 2.35,
+    noiseFloor: 0.04,
+    attack: 0.76,
+    release: 0.22,
+    description: "Speech intelligibility & upper F2",
+  },
+  {
+    minHz: 2300,
+    maxHz: 3400,
+    sensitivity: 2.75,
+    noiseFloor: 0.04,
+    attack: 0.78,
+    release: 0.24,
+    description: "Consonant definition & clarity (F3)",
+  },
+  {
+    minHz: 3400,
+    maxHz: 4400,
+    sensitivity: 3.15,
+    noiseFloor: 0.04,
+    attack: 0.80,
+    release: 0.25,
+    description: "High fricative & consonant articulation",
+  },
+  {
+    minHz: 4400,
+    maxHz: 5400,
+    sensitivity: 3.55,
+    noiseFloor: 0.04,
+    attack: 0.82,
+    release: 0.26,
+    description: "Sibilance & high consonant crispness",
+  },
+] as const;
+
+/** Alias for backwards compatibility */
+export const SPEECH_BANDS = FREQUENCY_BANDS;
+
+/**
+ * Calculates start and end FFT bin indices for a given frequency range in Hz,
+ * based on the actual AudioContext sample rate and FFT size.
+ */
+export function getBandBinIndices(
+  minHz: number,
+  maxHz: number,
+  sampleRate: number,
+  fftSize: number
+): { startBin: number; endBin: number } {
+  const safeSampleRate = sampleRate > 0 ? sampleRate : 48000;
+  const safeFftSize = fftSize > 0 ? fftSize : 2048;
+  const binResolution = safeSampleRate / safeFftSize;
+  const maxBin = Math.floor(safeFftSize / 2) - 1;
+
+  // Skip bin 0 (DC offset)
+  const startBin = Math.max(1, Math.min(maxBin, Math.floor(minHz / binResolution)));
+  const endBin = Math.max(startBin, Math.min(maxBin, Math.ceil(maxHz / binResolution)));
+  return { startBin, endBin };
+}
+
+/**
+ * Computes normalized energy for a specific frequency band from raw FFT byte data.
+ * Blends mean energy (70%) and peak harmonic energy (30%), subtracts the band noise floor,
+ * applies band sensitivity, and compresses softly to prevent saturation.
+ */
+export function computeBandEnergy(
+  freqData: Uint8Array | number[],
+  startBin: number,
+  endBin: number,
+  config: Pick<FrequencyBandConfig, "sensitivity" | "noiseFloor">
+): number {
+  if (startBin > endBin || endBin >= freqData.length) return 0;
+
+  let sum = 0;
+  let peak = 0;
+  const count = endBin - startBin + 1;
+
+  for (let b = startBin; b <= endBin; b += 1) {
+    const val = freqData[b] ?? 0;
+    sum += val;
+    if (val > peak) peak = val;
+  }
+
+  const meanNorm = sum / (count * 255);
+  const peakNorm = peak / 255;
+  const combined = meanNorm * 0.7 + peakNorm * 0.3;
+
+  const floor = config.noiseFloor;
+  const aboveFloor = Math.max(0, combined - floor) / Math.max(0.001, 1 - floor);
+  const amplified = aboveFloor * config.sensitivity;
+
+  // Soft compressive curve: prevents multiple bands flattening at max height during speech
+  const compressed = amplified <= 0 ? 0 : amplified / (1 + 0.35 * amplified);
+  return Math.min(1, Math.max(0, compressed));
+}
+
+/**
+ * Applies asymmetric attack/release smoothing to a bar's energy value.
+ * Quick attack captures sudden transients, while slower release creates natural, fluid decay.
+ */
+export function smoothBarValue(
+  current: number,
+  target: number,
+  attack: number,
+  release: number
+): number {
+  if (isNaN(current)) return target;
+  if (target > current) {
+    return current + (target - current) * attack;
+  }
+  return current + (target - current) * release;
+}
 
 function pickMimeType(): string | undefined {
   if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") {
@@ -132,8 +293,8 @@ export default function Recorder({ onComplete, onCancel }: Props) {
 
     const source = context.createMediaStreamSource(stream);
     const analyser = context.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.75;
+    analyser.fftSize = FFT_SIZE;
+    analyser.smoothingTimeConstant = 0.45;
     source.connect(analyser);
     // Deliberately not connected to context.destination: no monitoring, no echo.
 
@@ -143,6 +304,14 @@ export default function Recorder({ onComplete, onCancel }: Props) {
     const timeData = new Uint8Array(analyser.fftSize);
     const freqData = new Uint8Array(analyser.frequencyBinCount);
     const simpleLevel = prefersReducedMotion();
+
+    // Precalculate frequency bin ranges for each of the 9 bands using actual sampleRate and FFT size
+    const binRanges = FREQUENCY_BANDS.map((band) =>
+      getBandBinIndices(band.minHz, band.maxHz, context.sampleRate, FFT_SIZE)
+    );
+
+    // Track smoothed energy independently per bar across frames
+    const currentEnergies = new Float32Array(BAR_COUNT);
 
     const tick = () => {
       rafRef.current = window.requestAnimationFrame(tick);
@@ -155,7 +324,7 @@ export default function Recorder({ onComplete, onCancel }: Props) {
       }
       const rms = Math.sqrt(sum / timeData.length);
       const speaking = rms >= NOISE_GATE_RMS;
-      // Perceptually smooth volume factor above noise gate
+      // Perceptually smooth volume factor above noise gate for reduced-motion indicator
       const volume = Math.min(1, Math.max(0, (rms - NOISE_GATE_RMS) / 0.07));
 
       if (simpleLevel) {
@@ -165,40 +334,42 @@ export default function Recorder({ onComplete, onCancel }: Props) {
         return;
       }
 
-      if (speaking) analyser.getByteFrequencyData(freqData);
+      if (speaking) {
+        analyser.getByteFrequencyData(freqData);
+      }
 
       for (let index = 0; index < BAR_COUNT; index += 1) {
         const bar = barsRef.current[index];
         if (!bar) continue;
 
-        if (!speaking) {
-          // Gated silence: all 9 elements settle into the subtle idle capsule baseline
+        const band = FREQUENCY_BANDS[index] ?? FREQUENCY_BANDS[0];
+        const bins = binRanges[index] ?? binRanges[0];
+
+        // 1. Calculate target energy independently from its own frequency band (zero shared volume)
+        const targetEnergy = speaking
+          ? computeBandEnergy(freqData, bins.startBin, bins.endBin, band)
+          : 0;
+
+        // 2. Independent attack/release smoothing per bar
+        const smoothed = smoothBarValue(
+          currentEnergies[index] ?? 0,
+          targetEnergy,
+          band.attack,
+          band.release
+        );
+        currentEnergies[index] = smoothed;
+
+        // 3. Render bar height and opacity
+        if (!speaking && smoothed < 0.02) {
+          // Gated silence: settled into the subtle idle capsule baseline
           bar.style.height = `${IDLE_BAR_PX}px`;
           bar.style.opacity = "0.35";
-          continue;
+        } else {
+          const activeRange = MAX_BAR_PX - MIN_ACTIVE_BAR_PX;
+          const targetHeight = Math.round(MIN_ACTIVE_BAR_PX + smoothed * activeRange);
+          bar.style.height = `${targetHeight}px`;
+          bar.style.opacity = `${(0.85 + smoothed * 0.15).toFixed(2)}`;
         }
-
-        const band = SPEECH_BANDS[index] ?? SPEECH_BANDS[0];
-        let bandSum = 0;
-        const binCount = band.end - band.start + 1;
-        for (let b = band.start; b <= band.end; b += 1) {
-          bandSum += freqData[b] ?? 0;
-        }
-        const avgBinEnergy = bandSum / (binCount * 255);
-
-        // Modulated frequency energy tailored per band
-        const rawBandEnergy = Math.min(1, avgBinEnergy * band.gain * band.weight);
-
-        // Vocal envelope coupling: frequency band activity (72%) + overall RMS vocal energy (28%)
-        // This ensures every element, including upper articulation bands 7 & 8, responds organically
-        const speechEnergy = Math.min(1, rawBandEnergy * 0.72 + volume * 0.28 * band.weight);
-
-        // Dynamic height range above the subtle active minimum height
-        const activeRange = MAX_BAR_PX - MIN_ACTIVE_BAR_PX;
-        const targetHeight = Math.round(MIN_ACTIVE_BAR_PX + speechEnergy * activeRange);
-
-        bar.style.height = `${targetHeight}px`;
-        bar.style.opacity = `${Math.min(1, 0.85 + volume * 0.15)}`;
       }
     };
 

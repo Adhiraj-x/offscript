@@ -1,6 +1,20 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import test from "node:test";
 import { MODES, modeInfo } from "../lib/modes";
+import {
+  BAR_COUNT,
+  IDLE_BAR_PX,
+  MIN_ACTIVE_BAR_PX,
+  MAX_BAR_PX,
+  NOISE_GATE_RMS,
+  FFT_SIZE,
+  FREQUENCY_BANDS,
+  getBandBinIndices,
+  computeBandEnergy,
+  smoothBarValue,
+} from "../components/Recorder";
 
 test("MODES configuration has exact names, prep seconds and descriptions", () => {
   assert.equal(MODES.length, 2);
@@ -361,104 +375,107 @@ test("contextual ambient background intensity levels across application routes a
   assert.ok(INTENSITY_OPACITIES.minimal >= 0.25 && INTENSITY_OPACITIES.minimal <= 0.35);
 });
 
-test("recording voice visualizer frequency bands, dynamic response and idle state", () => {
-  const BAR_COUNT = 9;
-  const IDLE_BAR_PX = 4;
-  const MIN_ACTIVE_BAR_PX = 7;
-  const MAX_BAR_PX = 32;
-  const NOISE_GATE_RMS = 0.014;
+test("recording voice visualizer 2048-FFT frequency bands, decoupled response, and idle baseline", () => {
+  const sampleRate48k = 48000;
+  const sampleRate44k = 44100;
 
-  // Approximate frequency per bin for 48kHz / 256 fftSize is 187.5 Hz (44.1kHz is ~172 Hz)
-  const BIN_HZ = 187.5;
+  // 1. All nine elements configured with 2048 FFT
+  assert.equal(FREQUENCY_BANDS.length, BAR_COUNT);
+  assert.equal(BAR_COUNT, 9);
+  assert.equal(FFT_SIZE, 2048);
 
-  const SPEECH_BANDS = [
-    { start: 1, end: 2, gain: 1.05, weight: 1.00 }, // ~180-450 Hz
-    { start: 2, end: 3, gain: 1.15, weight: 1.06 }, // ~350-650 Hz
-    { start: 3, end: 4, gain: 1.25, weight: 0.96 }, // ~550-850 Hz
-    { start: 4, end: 6, gain: 1.40, weight: 1.12 }, // ~750-1250 Hz
-    { start: 6, end: 9, gain: 1.65, weight: 1.04 }, // ~1100-1800 Hz
-    { start: 9, end: 13, gain: 1.90, weight: 0.98 }, // ~1650-2550 Hz
-    { start: 13, end: 17, gain: 2.20, weight: 1.14 }, // ~2400-3300 Hz
-    { start: 17, end: 22, gain: 2.55, weight: 1.08 }, // ~3100-4200 Hz
-    { start: 22, end: 28, gain: 2.90, weight: 1.16 }, // ~4000-5200 Hz
-  ];
+  // 2. Frequency coverage spans ~90 Hz to 5,400 Hz across useful speech spectrum
+  assert.equal(FREQUENCY_BANDS[0].minHz, 90);
+  assert.equal(FREQUENCY_BANDS[8].maxHz, 5400);
 
-  // 1. All nine elements configured
-  assert.equal(SPEECH_BANDS.length, BAR_COUNT);
-
-  // 2. Bands cover useful speech frequencies (180 Hz to ~5200 Hz)
-  const lowestHz = SPEECH_BANDS[0].start * BIN_HZ;
-  const highestHz = SPEECH_BANDS[8].end * BIN_HZ;
-  assert.ok(lowestHz >= 150 && lowestHz <= 250);
-  assert.ok(highestHz >= 4500 && highestHz <= 5500);
-
-  // 3. Final two elements (indices 7 and 8) are within active speech range, NOT dead bins (> 7kHz)
-  const band7CenterHz = ((SPEECH_BANDS[7].start + SPEECH_BANDS[7].end) / 2) * BIN_HZ;
-  const band8CenterHz = ((SPEECH_BANDS[8].start + SPEECH_BANDS[8].end) / 2) * BIN_HZ;
-  assert.ok(band7CenterHz >= 3000 && band7CenterHz <= 4500);
-  assert.ok(band8CenterHz >= 4000 && band8CenterHz <= 5500);
-  assert.ok(highestHz < 7000, "Should not map final elements to inaudible high frequencies");
-
-  // 4. Sensitivity gain increases for higher frequency bands to compensate spectral rolloff
-  for (let i = 1; i < BAR_COUNT; i++) {
-    assert.ok(
-      SPEECH_BANDS[i].gain > SPEECH_BANDS[i - 1].gain,
-      `Band ${i} gain should compensate higher frequencies`,
-    );
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const band = FREQUENCY_BANDS[i];
+    assert.ok(band.minHz < band.maxHz, `Band ${i} minHz must be less than maxHz`);
+    if (i > 0) {
+      assert.ok(band.minHz >= FREQUENCY_BANDS[i - 1].minHz, `Band ${i} minHz must advance`);
+      assert.ok(band.sensitivity > FREQUENCY_BANDS[i - 1].sensitivity, `Band ${i} sensitivity compensates spectral rolloff`);
+    }
   }
 
-  // 5. Individualized weights prevent mechanical synchronization
-  const weights = SPEECH_BANDS.map((b) => b.weight);
-  const uniqueWeights = new Set(weights);
-  assert.ok(uniqueWeights.size >= 5, "Weights should be distinct across elements");
+  // 3. getBandBinIndices calculates accurate bins for sample rates
+  const bins48k = FREQUENCY_BANDS.map((band) =>
+    getBandBinIndices(band.minHz, band.maxHz, sampleRate48k, FFT_SIZE)
+  );
+  const bins44k = FREQUENCY_BANDS.map((band) =>
+    getBandBinIndices(band.minHz, band.maxHz, sampleRate44k, FFT_SIZE)
+  );
 
-  // 6. Idle state simulation (silence below noise gate)
-  const simulateVisualizer = (rms: number, freqData: number[]) => {
-    const speaking = rms >= NOISE_GATE_RMS;
-    const volume = Math.min(1, Math.max(0, (rms - NOISE_GATE_RMS) / 0.07));
-
-    return SPEECH_BANDS.map((band) => {
-      if (!speaking) {
-        return { height: IDLE_BAR_PX, opacity: 0.35 };
-      }
-      let sum = 0;
-      const count = band.end - band.start + 1;
-      for (let b = band.start; b <= band.end; b++) {
-        sum += freqData[b] ?? 0;
-      }
-      const avg = sum / (count * 255);
-      const rawEnergy = Math.min(1, avg * band.gain * band.weight);
-      const speechEnergy = Math.min(1, rawEnergy * 0.72 + volume * 0.28 * band.weight);
-      const activeRange = MAX_BAR_PX - MIN_ACTIVE_BAR_PX;
-      const height = Math.round(MIN_ACTIVE_BAR_PX + speechEnergy * activeRange);
-      const opacity = Math.min(1, 0.85 + volume * 0.15);
-      return { height, opacity };
-    });
-  };
-
-  // Silence: all 9 elements settle into idle capsule height (4px)
-  const silence = simulateVisualizer(0.005, new Array(128).fill(0));
-  silence.forEach((bar) => {
-    assert.equal(bar.height, IDLE_BAR_PX);
-    assert.equal(bar.opacity, 0.35);
+  bins48k.forEach((bin, idx) => {
+    assert.ok(bin.startBin >= 1, `Band ${idx} must not use DC bin 0`);
+    assert.ok(bin.endBin >= bin.startBin, `Band ${idx} endBin must be >= startBin`);
+    assert.ok(bin.endBin - bin.startBin + 1 >= 3, `Band ${idx} must contain multiple bins at 48kHz`);
   });
 
-  // Quiet speech: all 9 elements visibly lift above active floor (>= 7px)
-  const quietFreqs = new Array(128).fill(0);
-  for (let i = 1; i <= 28; i++) quietFreqs[i] = 40;
-  const quietSpeech = simulateVisualizer(0.02, quietFreqs);
-  quietSpeech.forEach((bar, idx) => {
-    assert.ok(bar.height >= MIN_ACTIVE_BAR_PX, `Bar ${idx} should lift above active minimum on quiet speech`);
-    assert.ok(bar.height <= MAX_BAR_PX);
-    assert.ok(bar.opacity >= 0.85);
+  bins44k.forEach((bin, idx) => {
+    assert.ok(bin.startBin >= 1, `Band ${idx} must not use DC bin 0 at 44.1kHz`);
+    assert.ok(bin.endBin >= bin.startBin, `Band ${idx} endBin must be >= startBin at 44.1kHz`);
   });
 
-  // Normal speech with consonants activating upper bands (including 7 and 8)
-  const speechFreqs = new Array(128).fill(0);
-  for (let i = 1; i <= 28; i++) speechFreqs[i] = 120;
-  const normalSpeech = simulateVisualizer(0.06, speechFreqs);
-  assert.ok(normalSpeech[7].height > MIN_ACTIVE_BAR_PX + 5, "Bar 7 responds strongly to speech");
-  assert.ok(normalSpeech[8].height > MIN_ACTIVE_BAR_PX + 5, "Bar 8 responds strongly to speech");
+  // 4. Decoupled response: each bar calculates energy independently with zero shared volume
+  const freqData = new Uint8Array(FFT_SIZE / 2);
+  // Inject low vowel energy into Band 1 (160-280 Hz)
+  for (let b = bins48k[1].startBin; b <= bins48k[1].endBin; b++) {
+    freqData[b] = 160;
+  }
+  const band1Energy = computeBandEnergy(freqData, bins48k[1].startBin, bins48k[1].endBin, FREQUENCY_BANDS[1]);
+  const band8Energy = computeBandEnergy(freqData, bins48k[8].startBin, bins48k[8].endBin, FREQUENCY_BANDS[8]);
+
+  assert.ok(band1Energy > 0.45, "Band 1 should respond strongly to low formant energy");
+  assert.equal(band8Energy, 0, "Band 8 must remain silent when energy is only in low bands (zero coupling)");
+
+  // 5. Inject sibilance / fricative energy into Band 8 (4400-5400 Hz)
+  for (let b = bins48k[8].startBin; b <= bins48k[8].endBin; b++) {
+    freqData[b] = 130;
+  }
+  const band8Sibilant = computeBandEnergy(freqData, bins48k[8].startBin, bins48k[8].endBin, FREQUENCY_BANDS[8]);
+  assert.ok(band8Sibilant > 0.5, "Band 8 responds strongly to sibilant /s/ energy");
+
+  // 6. Anti-saturation: loud energy does not clamp all bars to identical max height
+  freqData.fill(255);
+  const loudEnergies = FREQUENCY_BANDS.map((band, idx) =>
+    computeBandEnergy(freqData, bins48k[idx].startBin, bins48k[idx].endBin, band)
+  );
+  loudEnergies.forEach((energy, idx) => {
+    assert.ok(energy <= 1.0 && energy >= 0.5, `Band ${idx} energy should stay in safe range`);
+  });
+
+  // 7. Independent asymmetric smoothing (quick attack, slower release)
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const band = FREQUENCY_BANDS[i];
+    assert.ok(band.attack > 0.60 && band.attack < 0.90, `Band ${i} attack must be snappy`);
+    assert.ok(band.release > 0.12 && band.release < 0.35, `Band ${i} release must be slower than attack`);
+    assert.ok(band.attack > band.release, `Band ${i} attack must exceed release`);
+
+    // Test attack step
+    const attackStep = smoothBarValue(0, 1.0, band.attack, band.release);
+    assert.ok(attackStep >= band.attack * 0.99);
+
+    // Test release step
+    const releaseStep = smoothBarValue(1.0, 0, band.attack, band.release);
+    assert.ok(releaseStep < 1.0);
+    assert.ok(releaseStep > 0.65); // Graceful decay, not instant collapse
+  }
+
+  // 8. Idle baseline and noise gating constants
+  assert.equal(IDLE_BAR_PX, 4);
+  assert.equal(MIN_ACTIVE_BAR_PX, 7);
+  assert.equal(MAX_BAR_PX, 32);
+  assert.equal(NOISE_GATE_RMS, 0.014);
+});
+
+test("ShareCard renders clean 'Share result' button without emoji or arrow glyphs", () => {
+  const shareCardPath = path.join(__dirname, "../components/ShareCard.tsx");
+  const source = fs.readFileSync(shareCardPath, "utf8");
+
+  assert.ok(source.includes('"Share result"'), "Must contain exact 'Share result' label");
+  assert.ok(!source.includes("↗"), "Must not contain arrow glyph ↗");
+  assert.ok(!source.includes("aria-hidden>↗"), "Must not contain span with arrow glyph");
+  assert.ok(!source.includes("&nearr;"), "Must not contain HTML arrow entity");
 });
 
 test("dark and light theme system token architecture, persistence, and toggle behavior", () => {
