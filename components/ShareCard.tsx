@@ -67,7 +67,7 @@ export default function ShareCard({
         type="button"
         onClick={download}
         disabled={busy}
-        className="inline-flex items-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm text-white/85 transition-colors hover:border-accent/50 hover:text-white disabled:cursor-wait disabled:opacity-50"
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-line bg-panel/60 px-5 text-sm text-white/85 transition-all hover:border-white/30 hover:bg-panel hover:text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-base disabled:cursor-wait disabled:opacity-50"
       >
         {busy ? "Rendering…" : "Share result"}
         <span aria-hidden>↗</span>

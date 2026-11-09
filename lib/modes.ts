@@ -11,17 +11,17 @@ export type ModeInfo = {
 export const MODES: ModeInfo[] = [
   {
     id: "off-the-cuff",
-    name: "Off the Cuff",
+    name: "Quick Prep",
     prepSeconds: 60,
     prepLabel: "60s prep",
-    blurb: "A minute to gather your thoughts, then two minutes to talk. No notes, no safety net.",
+    blurb: "Organise your thoughts quickly, then deliver your response.",
   },
   {
     id: "deep-research",
-    name: "Deep Research",
+    name: "Extended Prep",
     prepSeconds: 600,
     prepLabel: "10 min prep",
-    blurb: "Ten minutes to dig into the details and build a real argument. Then deliver it out loud.",
+    blurb: "Take more time to explore the topic, structure your ideas and build a considered response.",
   },
 ];
 

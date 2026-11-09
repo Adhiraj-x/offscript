@@ -27,8 +27,18 @@ function toSession(value: unknown): Session | null {
   const session = value as Session;
   const metrics = coerceSpeechMetrics((session as { metrics?: unknown }).metrics);
   const fillers = coerceFillers((session as { fillers?: unknown }).fillers);
+  const mainTakeaway =
+    typeof session.mainTakeaway === "string" && session.mainTakeaway.trim().length > 0
+      ? session.mainTakeaway.trim()
+      : undefined;
+  const nextAttemptFocus =
+    typeof session.nextAttemptFocus === "string" && session.nextAttemptFocus.trim().length > 0
+      ? session.nextAttemptFocus.trim()
+      : undefined;
   return {
     ...session,
+    mainTakeaway,
+    nextAttemptFocus,
     metrics: metrics ?? undefined,
     fillers: fillers ?? undefined,
   };

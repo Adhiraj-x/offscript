@@ -16,6 +16,10 @@ export type Session = {
   fillerWordCount: number;
   feedback: string;
   transcript: string;
+  /** Short personalised summary of the user's performance. */
+  mainTakeaway?: string;
+  /** Concise practical focus instruction for the next recording attempt. */
+  nextAttemptFocus?: string;
   /** Optional so records saved before categories existed still load. */
   category?: TopicCategory;
   /** Optional so records saved before Scoring Engine 2.0 still load. */
@@ -32,6 +36,10 @@ export type RatingResult = {
   feedback: string;
   strengths: string[];
   improvements: string[];
+  /** Short personalised summary of the user's performance. */
+  mainTakeaway?: string;
+  /** Concise practical focus instruction for the next recording attempt. */
+  nextAttemptFocus?: string;
   wpm: number;
   fillerWordCount: number;
   transcript: string;

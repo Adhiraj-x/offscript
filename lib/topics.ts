@@ -1,127 +1,191 @@
-export type TopicCategory = "word" | "statement" | "general" | "trend";
+export type CanonicalTopicCategory =
+  | "CONCEPT"
+  | "TREND"
+  | "STATEMENT"
+  | "WHAT_IF"
+  | "DILEMMA";
+
+export type LegacyTopicCategory = "word" | "statement" | "general" | "trend";
+
+export type TopicCategory = CanonicalTopicCategory | LegacyTopicCategory;
+
+export const CATEGORIES: readonly CanonicalTopicCategory[] = [
+  "CONCEPT",
+  "TREND",
+  "STATEMENT",
+  "WHAT_IF",
+  "DILEMMA",
+];
+
+export const CATEGORY_LABEL: Record<CanonicalTopicCategory, string> &
+  Record<LegacyTopicCategory, string> = {
+  CONCEPT: "CONCEPT",
+  TREND: "TREND",
+  STATEMENT: "STATEMENT",
+  WHAT_IF: "WHAT IF",
+  DILEMMA: "DILEMMA",
+  // Legacy mappings for backwards compatibility with saved sessions
+  word: "CONCEPT",
+  statement: "STATEMENT",
+  general: "STATEMENT",
+  trend: "TREND",
+};
+
+export const DOMAINS = [
+  "Technology and AI",
+  "Business and entrepreneurship",
+  "Personal finance",
+  "Society and culture",
+  "Psychology and human behaviour",
+  "Education and learning",
+  "Science and discovery",
+  "Ethics and philosophy",
+  "Environment and sustainability",
+  "Work and careers",
+  "Creativity and entertainment",
+  "Everyday life and relationships",
+] as const;
+
+export type Domain = (typeof DOMAINS)[number];
+
+export function isDomain(val: unknown): val is Domain {
+  return typeof val === "string" && (DOMAINS as readonly string[]).includes(val);
+}
+
+export function normalizeCategory(category: unknown): CanonicalTopicCategory {
+  if (typeof category !== "string") return "STATEMENT";
+  const cleaned = category.trim().toUpperCase().replace(/[-\s]+/g, "_");
+  if (cleaned === "CONCEPT" || cleaned === "WORD") return "CONCEPT";
+  if (cleaned === "TREND") return "TREND";
+  if (cleaned === "STATEMENT" || cleaned === "GENERAL") return "STATEMENT";
+  if (cleaned === "WHAT_IF" || cleaned === "WHATIF") return "WHAT_IF";
+  if (cleaned === "DILEMMA") return "DILEMMA";
+  return "STATEMENT";
+}
 
 export interface Topic {
   text: string;
   category: TopicCategory;
+  domain?: string;
 }
 
-export const CATEGORY_LABEL: Record<TopicCategory, string> = {
-  word: "Word",
-  statement: "Statement",
-  general: "Topic",
-  trend: "Trend",
-};
-
-const CATEGORIES: TopicCategory[] = ["word", "statement", "general", "trend"];
-
 export const TOPICS: Topic[] = [
-  // Single words
-  { text: "Silence", category: "word" },
-  { text: "Nostalgia", category: "word" },
-  { text: "Luck", category: "word" },
-  { text: "Home", category: "word" },
-  { text: "Ambition", category: "word" },
-  { text: "Trust", category: "word" },
-  { text: "Boredom", category: "word" },
-  { text: "Midnight", category: "word" },
-  { text: "Maps", category: "word" },
-  { text: "Failure", category: "word" },
-  { text: "Currency", category: "word" },
-  { text: "Mirrors", category: "word" },
-  { text: "Rumors", category: "word" },
-  { text: "Patience", category: "word" },
-  { text: "Shortcuts", category: "word" },
+  // CONCEPT — A single word or abstract idea that encourages interpretation and reflection
+  { text: "Nostalgia", category: "CONCEPT", domain: "Psychology and human behaviour" },
+  { text: "Ambition", category: "CONCEPT", domain: "Work and careers" },
+  { text: "Freedom", category: "CONCEPT", domain: "Ethics and philosophy" },
+  { text: "Symmetry", category: "CONCEPT", domain: "Science and discovery" },
+  { text: "Identity", category: "CONCEPT", domain: "Society and culture" },
+  { text: "Resilience", category: "CONCEPT", domain: "Psychology and human behaviour" },
+  { text: "Curiosity", category: "CONCEPT", domain: "Education and learning" },
+  { text: "Silence", category: "CONCEPT", domain: "Everyday life and relationships" },
+  { text: "Solitude", category: "CONCEPT", domain: "Psychology and human behaviour" },
+  { text: "Friction", category: "CONCEPT", domain: "Science and discovery" },
+  { text: "Vulnerability", category: "CONCEPT", domain: "Everyday life and relationships" },
+  { text: "Velocity", category: "CONCEPT", domain: "Business and entrepreneurship" },
+  { text: "Authenticity", category: "CONCEPT", domain: "Society and culture" },
+  { text: "Patience", category: "CONCEPT", domain: "Everyday life and relationships" },
+  { text: "Legacy", category: "CONCEPT", domain: "Ethics and philosophy" },
 
-  // Statements and prompts
-  { text: "Failure is the best teacher.", category: "statement" },
-  { text: "You can't be both liked and respected.", category: "statement" },
-  { text: "What would you tell your 15-year-old self?", category: "statement" },
-  { text: "If you could un-invent one thing, what would it be?", category: "statement" },
-  { text: "Talent is overrated.", category: "statement" },
-  { text: "Convince me that mornings are better than nights.", category: "statement" },
-  { text: "Describe your perfect day without using your phone.", category: "statement" },
-  { text: "Is it better to be a big fish in a small pond?", category: "statement" },
-  { text: "Why do we fear public speaking more than almost anything?", category: "statement" },
-  { text: "What's the best advice you've ever ignored?", category: "statement" },
-  { text: "Is social media making us lonelier?", category: "statement" },
-  { text: "Should everyone learn to code?", category: "statement" },
-  { text: "Rules are meant to be broken.", category: "statement" },
-  { text: "Sell me something you hate.", category: "statement" },
-  { text: "Is it better to be early or on time?", category: "statement" },
+  // TREND — Developments in technology, society, culture, business, work and everyday life
+  { text: "Why are more people building multiple income streams?", category: "TREND", domain: "Personal finance" },
+  { text: "Is remote work changing how people build relationships?", category: "TREND", domain: "Work and careers" },
+  { text: "Why are digital minimalism and offline hobbies becoming appealing?", category: "TREND", domain: "Everyday life and relationships" },
+  { text: "The rise of micro-credentials over traditional university degrees", category: "TREND", domain: "Education and learning" },
+  { text: "How algorithmic feeds are shaping personal taste and culture", category: "TREND", domain: "Technology and AI" },
+  { text: "The decline of third places and where people meet now", category: "TREND", domain: "Society and culture" },
+  { text: "Why quick-commerce is transforming consumer expectations", category: "TREND", domain: "Business and entrepreneurship" },
+  { text: "The impact of subscription business models on personal ownership", category: "TREND", domain: "Business and entrepreneurship" },
+  { text: "How AI tools are shifting the definition of entry-level skills", category: "TREND", domain: "Technology and AI" },
+  { text: "The growing popularity of low-stimulation travel and retreats", category: "TREND", domain: "Environment and sustainability" },
+  { text: "The shift from public social media to private group chats", category: "TREND", domain: "Society and culture" },
+  { text: "Why personal branding has become an expectation in modern careers", category: "TREND", domain: "Work and careers" },
 
-  // Broad topics
-  { text: "Why we dream", category: "general" },
-  { text: "How habits form", category: "general" },
-  { text: "The value of travel", category: "general" },
-  { text: "Friendship in adulthood", category: "general" },
-  { text: "Minimalism", category: "general" },
-  { text: "Learning a second language", category: "general" },
-  { text: "The psychology of money", category: "general" },
-  { text: "Why people procrastinate", category: "general" },
-  { text: "Teamwork vs. working solo", category: "general" },
-  { text: "The role of luck in success", category: "general" },
-  { text: "What makes a good leader", category: "general" },
-  { text: "City life vs. village life", category: "general" },
-  { text: "The future of education", category: "general" },
-  { text: "Why we love stories", category: "general" },
-  { text: "The power of routines", category: "general" },
+  // STATEMENT — A debatable proposition asking the user to agree, disagree or defend
+  { text: "A university degree is less valuable than practical experience.", category: "STATEMENT", domain: "Education and learning" },
+  { text: "Financial freedom is more important than job security.", category: "STATEMENT", domain: "Personal finance" },
+  { text: "Social media has made meaningful friendships harder to maintain.", category: "STATEMENT", domain: "Society and culture" },
+  { text: "You cannot be both universally liked and deeply respected.", category: "STATEMENT", domain: "Psychology and human behaviour" },
+  { text: "Working from anywhere makes people less loyal to their company.", category: "STATEMENT", domain: "Work and careers" },
+  { text: "Most people do not actually want true freedom of choice.", category: "STATEMENT", domain: "Ethics and philosophy" },
+  { text: "Passion is a dangerous guide for career decisions.", category: "STATEMENT", domain: "Work and careers" },
+  { text: "True expertise is becoming harder to recognise.", category: "STATEMENT", domain: "Society and culture" },
+  { text: "Failure is the best teacher.", category: "STATEMENT", domain: "Education and learning" },
+  { text: "Talent is overrated compared to consistency.", category: "STATEMENT", domain: "Psychology and human behaviour" },
+  { text: "An uncomfortable truth is always better than a comforting lie.", category: "STATEMENT", domain: "Ethics and philosophy" },
+  { text: "Productivity culture has damaged our relationship with rest.", category: "STATEMENT", domain: "Everyday life and relationships" },
 
-  // Current themes
-  { text: "AI and the future of jobs", category: "trend" },
-  { text: "Short-form video and attention spans", category: "trend" },
-  { text: "Remote work vs. the office", category: "trend" },
-  { text: "The creator economy", category: "trend" },
-  { text: "10-minute quick-commerce delivery", category: "trend" },
-  { text: "UPI and cashless payments", category: "trend" },
-  { text: "Electric vehicles", category: "trend" },
-  { text: "Personal branding on LinkedIn", category: "trend" },
-  { text: "Side hustles and multiple income streams", category: "trend" },
-  { text: "Digital detox", category: "trend" },
-  { text: "Subscription fatigue", category: "trend" },
-  { text: "AI-generated art and music", category: "trend" },
-  { text: "Wearables and fitness tracking", category: "trend" },
-  { text: "Microlearning", category: "trend" },
-  { text: "The gig economy", category: "trend" },
+  // WHAT_IF — Hypothetical scenarios testing imagination, reasoning and structured thinking
+  { text: "What if cities completely banned private cars?", category: "WHAT_IF", domain: "Environment and sustainability" },
+  { text: "What if money stopped existing tomorrow?", category: "WHAT_IF", domain: "Society and culture" },
+  { text: "What if everyone had to work only four days a week?", category: "WHAT_IF", domain: "Work and careers" },
+  { text: "What if all internet comments required real verified identity?", category: "WHAT_IF", domain: "Technology and AI" },
+  { text: "What if money expired after twelve months of inactivity?", category: "WHAT_IF", domain: "Personal finance" },
+  { text: "What if humans lost the ability to lie for 24 hours?", category: "WHAT_IF", domain: "Ethics and philosophy" },
+  { text: "What if AI graded every political speech in real time?", category: "WHAT_IF", domain: "Technology and AI" },
+  { text: "What if college education was completely free but admissions were a lottery?", category: "WHAT_IF", domain: "Education and learning" },
+  { text: "What if social media algorithms were legally required to show opposing views?", category: "WHAT_IF", domain: "Society and culture" },
+  { text: "What if everyone received a guaranteed universal basic income?", category: "WHAT_IF", domain: "Personal finance" },
+  { text: "What if all personal devices shut down automatically at 9 PM?", category: "WHAT_IF", domain: "Everyday life and relationships" },
+  { text: "What if scientific research funding was decided by public vote?", category: "WHAT_IF", domain: "Science and discovery" },
+
+  // DILEMMA — A difficult choice involving competing priorities or values
+  { text: "Would you choose a high-paying job with little free time or a lower-paying job with more freedom?", category: "DILEMMA", domain: "Work and careers" },
+  { text: "Would you prioritise personal happiness or financial security?", category: "DILEMMA", domain: "Personal finance" },
+  { text: "Would you rather be respected by everyone or deeply understood by a few?", category: "DILEMMA", domain: "Psychology and human behaviour" },
+  { text: "Would you choose absolute job security with zero growth, or high risk with infinite upside?", category: "DILEMMA", domain: "Business and entrepreneurship" },
+  { text: "Is it better to tell a painful truth or a protective lie?", category: "DILEMMA", domain: "Ethics and philosophy" },
+  { text: "Should an autonomous car save its passenger or five pedestrians?", category: "DILEMMA", domain: "Ethics and philosophy" },
+  { text: "Would you sacrifice personal privacy for complete physical safety?", category: "DILEMMA", domain: "Society and culture" },
+  { text: "Is it better to be exceptionally skilled in one area or competent in twenty?", category: "DILEMMA", domain: "Education and learning" },
+  { text: "Would you report a close friend's unethical conduct at work or protect your loyalty to them?", category: "DILEMMA", domain: "Work and careers" },
+  { text: "Would you rather live in a world where everyone knows your thoughts or you know everyone else's?", category: "DILEMMA", domain: "Psychology and human behaviour" },
+  { text: "Would you prefer unlimited creative freedom with no audience or massive reach with rigid constraints?", category: "DILEMMA", domain: "Creativity and entertainment" },
+  { text: "Would you choose a peaceful life with few achievements or a stressful life of notable impact?", category: "DILEMMA", domain: "Everyday life and relationships" },
 ];
 
 const RECENT_LIMIT = 5;
 const HISTORY_LIMIT = 30;
 
-/**
- * Topics handed out this session, in memory only (deliberately not persisted).
- * The last 5 block repeats; the full 30 feed the "avoid" list for AI generation.
- */
 let recentTopics: string[] = [];
 
-/** A random topic for the spinning reel (not a real pick). Candidates may include AI topics. */
+/** A random topic for the spinning reel. Candidates may include AI topics. */
 export function randomReelTopic(candidates: Topic[] = TOPICS): Topic {
   const pool = candidates.length > 0 ? candidates : TOPICS;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
 /**
- * Uniform over categories first, then uniform within the chosen category, so the
- * 15 single words don't dominate the 45 sentences/topics by sheer count.
- * Never repeats any of the last 5 topics handed out.
+ * Uniform over categories first, then uniform within the chosen category.
+ * Respects recent memory so repeated topics are avoided.
  */
-export function pickTopic(candidates: Topic[] = TOPICS): Topic {
+export function pickTopic(candidates: Topic[] = TOPICS, avoidTexts: string[] = []): Topic {
   const available = candidates.length > 0 ? candidates : TOPICS;
-  const blocked = recentTopics.slice(-RECENT_LIMIT);
-  const unseen = available.filter((topic) => !blocked.includes(topic.text));
+  const blocked = new Set([
+    ...recentTopics.slice(-RECENT_LIMIT).map((t) => t.toLowerCase()),
+    ...avoidTexts.map((t) => t.toLowerCase()),
+  ]);
+
+  const unseen = available.filter((topic) => !blocked.has(topic.text.toLowerCase()));
   const source = unseen.length > 0 ? unseen : available;
 
-  const categories = CATEGORIES.filter((category) =>
-    source.some((topic) => topic.category === category),
+  const presentCategories = CATEGORIES.filter((category) =>
+    source.some((topic) => normalizeCategory(topic.category) === category),
   );
-  const category = categories[Math.floor(Math.random() * categories.length)];
-  const pool = source.filter((topic) => topic.category === category);
-  const chosen = pool[Math.floor(Math.random() * pool.length)];
+  const selectedCategory =
+    presentCategories.length > 0
+      ? presentCategories[Math.floor(Math.random() * presentCategories.length)]
+      : CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+
+  const pool = source.filter((topic) => normalizeCategory(topic.category) === selectedCategory);
+  const candidatePool = pool.length > 0 ? pool : source;
+  const chosen = candidatePool[Math.floor(Math.random() * candidatePool.length)];
 
   recentTopics = [...recentTopics, chosen.text].slice(-HISTORY_LIMIT);
   return chosen;
 }
 
-/** Most recent picks, newest last — used so AI generation avoids topics already seen. */
+/** Most recent picks, newest last. */
 export function recentTopicTexts(limit = HISTORY_LIMIT): string[] {
   return recentTopics.slice(-limit);
 }

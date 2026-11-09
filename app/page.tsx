@@ -9,7 +9,7 @@ import ResultView from "@/components/ResultView";
 import TopicSpinner from "@/components/TopicSpinner";
 import { coerceFillers } from "@/lib/fillers";
 import { clampScore, roundRate } from "@/lib/format";
-import { modeInfo } from "@/lib/modes";
+import { modeInfo, modeName } from "@/lib/modes";
 import { coerceSpeechMetrics } from "@/lib/speechMetrics";
 import { loadHistory, newSessionId, saveSession } from "@/lib/storage";
 import { computeStreak } from "@/lib/streak";
@@ -36,6 +36,7 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [streak, setStreak] = useState(0);
   const [spinning, setSpinning] = useState(false);
+  const [prepAttempt, setPrepAttempt] = useState(0);
 
   useEffect(() => {
     setStreak(computeStreak(loadHistory()).current);
@@ -90,6 +91,14 @@ export default function HomePage() {
 
         const metrics = coerceSpeechMetrics(payload.metrics);
         const fillers = coerceFillers(payload.fillers);
+        const mainTakeaway =
+          typeof payload.mainTakeaway === "string" && payload.mainTakeaway.trim().length > 0
+            ? payload.mainTakeaway.trim()
+            : undefined;
+        const nextAttemptFocus =
+          typeof payload.nextAttemptFocus === "string" && payload.nextAttemptFocus.trim().length > 0
+            ? payload.nextAttemptFocus.trim()
+            : undefined;
         const rated: RatingResult = {
           contentScore: clampScore(Number(payload.contentScore ?? 0)),
           deliveryScore: clampScore(Number(payload.deliveryScore ?? 0)),
@@ -97,6 +106,8 @@ export default function HomePage() {
           feedback: String(payload.feedback ?? ""),
           strengths: Array.isArray(payload.strengths) ? payload.strengths.map(String) : [],
           improvements: Array.isArray(payload.improvements) ? payload.improvements.map(String) : [],
+          mainTakeaway,
+          nextAttemptFocus,
           wpm: roundRate(Number(metrics?.wpm ?? payload.wpm ?? 0)),
           fillerWordCount: Math.max(
             0,
@@ -120,6 +131,8 @@ export default function HomePage() {
           fillerWordCount: rated.fillerWordCount,
           feedback: rated.feedback,
           transcript: rated.transcript,
+          mainTakeaway,
+          nextAttemptFocus,
           metrics: metrics ?? undefined,
           fillers: fillers ?? undefined,
         };
@@ -147,75 +160,110 @@ export default function HomePage() {
   const startPrep = useCallback(() => setPhase("prep"), []);
   const startSpeaking = useCallback(() => setPhase("speak"), []);
 
-  function resetPractice() {
+  const retrySameTopic = useCallback(() => {
+    if (!topic || !mode) return;
+    setResult(null);
+    setErrorMessage("");
+    setPrepAttempt((prev) => prev + 1);
+    setPhase("prep");
+  }, [topic, mode]);
+
+  const resetPractice = useCallback(() => {
     setResult(null);
     setErrorMessage("");
     setTopic(null);
     setSpinning(false);
+    setPrepAttempt(0);
     setPhase("setup");
-  }
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, []);
 
   function pickMode(next: Mode) {
     setMode(next);
     if (phase !== "setup") {
       setPhase("setup");
       setResult(null);
+      setPrepAttempt(0);
     }
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 pb-24">
-      <Header streak={streak} />
+    <main className="mx-auto w-full max-w-2xl px-6 pb-24">
+      <Header streak={streak} onLogoClick={resetPractice} />
 
       {phase === "setup" ? (
-        <div className="pt-10">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-accent">Speaking practice</p>
-          <h1 className="mt-4 text-balance text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
-            Practice thinking
-            <br />
-            out loud.
-          </h1>
-          <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted">
-            Pick a mode, spin a topic, then talk for two minutes. You&apos;ll get a transcript and honest
-            feedback on what you said and how you said it.
-          </p>
-
-          <section className="mt-12">
-            <p className="mb-3 text-[11px] uppercase tracking-[0.22em] text-muted">1 — Pick a mode</p>
-            <ModePicker value={mode} onChange={pickMode} />
+        <div className="pt-4 sm:pt-6">
+          {/* Hero Section */}
+          <section className="pt-3 pb-1 text-center sm:pt-6 sm:pb-2">
+            <h1 className="text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
+              Prepare. Speak. Improve.
+            </h1>
+            <p className="mx-auto mt-4 sm:mt-5 max-w-[520px] text-balance text-sm sm:text-base leading-relaxed text-muted">
+              Where ideas take shape and voices find confidence.
+            </p>
           </section>
 
-          <section className="mt-10">
-            <p className="mb-3 text-[11px] uppercase tracking-[0.22em] text-muted">2 — Spin a topic</p>
+          {/* Section 1: Topic Selection */}
+          <section className="mt-7 sm:mt-8 space-y-3 sm:space-y-3.5">
+            <h2 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted">
+              1 — GET A TOPIC
+            </h2>
             <TopicSpinner
               topic={topic}
               onPick={setTopic}
-              disabled={!mode}
+              disabled={spinning}
               onSpinStateChange={setSpinning}
             />
           </section>
 
-          <button
-            type="button"
-            onClick={startPrep}
-            disabled={!mode || !topic || spinning}
-            className="mt-8 w-full rounded-full bg-accent px-6 py-3 text-sm font-medium text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-line disabled:text-muted sm:w-auto sm:px-8"
-          >
-            {spinning
-              ? "Spinning…"
-              : mode && topic
-                ? `Start ${modeInfo(mode).prepLabel} →`
-                : "Pick a mode and spin a topic"}
-          </button>
+          {/* Section 2: Mode Selection */}
+          <section className="mt-9 sm:mt-10 space-y-3 sm:space-y-3.5">
+            <h2 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted">
+              2 — PICK A MODE
+            </h2>
+            <ModePicker value={mode} onChange={pickMode} />
+          </section>
+
+          {/* Primary Action CTA */}
+          <section className="mt-7 sm:mt-8">
+            <button
+              type="button"
+              onClick={startPrep}
+              disabled={!mode || !topic || spinning}
+              className={`w-full rounded-full py-4 px-8 text-sm sm:text-base font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base sm:w-auto ${
+                mode && topic && !spinning
+                  ? "border border-transparent bg-accent text-black hover:bg-accent/90 active:scale-[0.98] shadow-[0_0_24px_-8px_rgba(201,249,108,0.35)] cursor-pointer"
+                  : "border border-line bg-panel text-muted cursor-not-allowed shadow-none disabled:border-line disabled:bg-panel disabled:text-muted disabled:opacity-100 disabled:cursor-not-allowed"
+              }`}
+            >
+              <span className={mode && topic && !spinning ? "text-black" : "text-muted"}>
+                {topic && mode
+                  ? "Start preparation"
+                  : topic && !mode
+                    ? "Pick a mode to continue"
+                    : !topic && mode
+                      ? "Get a topic to continue"
+                      : "Get a topic and pick a mode"}
+              </span>
+            </button>
+          </section>
         </div>
       ) : null}
 
       {phase === "prep" && mode && topic ? (
         <div className="pt-6">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Preparation</p>
+            <span className="rounded-full border border-line px-2.5 py-0.5 text-[11px] text-muted">
+              {modeName(mode)}
+            </span>
+          </div>
           <p className="text-balance text-lg leading-snug text-white/90">{topic.text}</p>
           <div className="mt-8">
             <PrepTimer
-              key={`${mode}-${topic.text}`}
+              key={`${mode}-${topic.text}-${prepAttempt}`}
               seconds={modeInfo(mode).prepSeconds}
               label={modeInfo(mode).prepLabel.replace(" prep", "")}
               onDone={startSpeaking}
@@ -234,7 +282,12 @@ export default function HomePage() {
 
       {phase === "speak" && mode && topic ? (
         <div className="pt-6">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Topic</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Topic</p>
+            <span className="rounded-full border border-line px-2.5 py-0.5 text-[11px] text-muted">
+              {modeName(mode)}
+            </span>
+          </div>
           <p className="mt-3 text-balance text-xl leading-snug text-white/90">{topic.text}</p>
           <div className="mt-8">
             <Recorder onComplete={handleRecorded} onCancel={resetPractice} />
@@ -295,6 +348,7 @@ export default function HomePage() {
             category={topic.category}
             mode={mode}
             onRestart={resetPractice}
+            onRetry={retrySameTopic}
           />
         </div>
       ) : null}

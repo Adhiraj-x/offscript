@@ -161,6 +161,8 @@ export type RatedAnswer = {
   feedback: string;
   strengths: string[];
   improvements: string[];
+  mainTakeaway?: string;
+  nextAttemptFocus?: string;
 };
 
 /**
@@ -310,6 +312,16 @@ export function normalizeRating(
   const paceCheck = checkPaceLabelConsistency(feedback, options.paceBand);
   if (!paceCheck.ok) return paceCheck;
 
+  const mainTakeaway =
+    typeof record.mainTakeaway === "string" && record.mainTakeaway.trim().length > 0
+      ? record.mainTakeaway.trim()
+      : undefined;
+
+  const nextAttemptFocus =
+    typeof record.nextAttemptFocus === "string" && record.nextAttemptFocus.trim().length > 0
+      ? record.nextAttemptFocus.trim()
+      : undefined;
+
   return {
     ok: true,
     value: {
@@ -319,6 +331,8 @@ export function normalizeRating(
       feedback,
       strengths,
       improvements,
+      mainTakeaway,
+      nextAttemptFocus,
     },
   };
 }
@@ -346,6 +360,7 @@ YOU DO NOT HEAR THE AUDIO
 - The transcript is machine-generated: expect misheard words, invented homophones, missing or wrong punctuation, run-together sentences, and dropped hesitation sounds.
 - Every judgement must be traceable to words in the transcript or to the supplied measurements. Do not invent statements the speaker did not make.
 - Timing and filler figures are estimates from timestamps and a text heuristic. If a measurement is missing or marked low precision, say the picture is partial; never present a guess as exact.
+- If you cite pause measurements, you MUST cite the measured longest pause duration accurately from the data. NEVER confuse the 1.5s threshold (which defines what counts as a long pause) with the actual duration of the longest pause.
 
 CONTENT SCORE (0-100) - only relevance to the topic, clarity of the central claim, structure, depth of explanation, supporting examples, coherence and logical reasoning. Anchors:
 - 0-39: off-topic or incoherent; no identifiable claim.
@@ -361,15 +376,17 @@ OVERALL
 - overallScore is 60% content + 40% delivery. The server recomputes it from your two scores and ignores whatever you return, so do not spend effort on it.
 
 FEEDBACK
-- 3-5 sentences, second person, direct but not harsh, ending with a concise overall assessment.
+- feedback: 3-5 sentences, second person, direct but not harsh, ending with a concise overall assessment.
 - Explain why the delivery score is what it is, referring to the actual measurements (rate, pauses, fillers) and to what they did to clarity.
 - Refer to actual parts of the answer: name the claim, the example, or the moment it drifted.
 - Include at least one short direct quote from the transcript, in double quotes.
 - If a pace classification is supplied, name it with that exact label and never substitute another pace label.
 - Do not contradict the measurements: never call a slow, hesitant take smooth or well-paced, and never call a comfortable pace rushed.
 - No generic motivation ("great job", "keep practising", "you've got this"), no markdown, no emojis, no headings.
-- strengths: exactly 2-3 items, each one sentence, specific to this answer.
-- improvements: exactly 2-3 items, each one concrete change for the next attempt.
+- mainTakeaway: 1-2 sentences. A short, personalised summary of the single most important thing the user should understand about their performance.
+- strengths: exactly 2-3 items, each one sentence, highlighting genuine strengths specific to this answer.
+- improvements: exactly 2-3 items, each one concrete, actionable weakness to improve.
+- nextAttemptFocus: exactly 1 concise, practical exercise or instruction that the user can apply in their next recording (e.g. "State your opinion first, explain why, and give one example. Replace repeated filler phrases with short pauses.").
 
 Return ONLY a JSON object:
 {
@@ -377,8 +394,10 @@ Return ONLY a JSON object:
   "deliveryScore": number,
   "overallScore": number,
   "feedback": string,
+  "mainTakeaway": string,
   "strengths": string[],
-  "improvements": string[]
+  "improvements": string[],
+  "nextAttemptFocus": string
 }
 Bands: ${BAND_GUIDE}.`;
 
@@ -436,8 +455,15 @@ export function feedbackRequirements(
   }
 
   if (metrics.pausesAvailable && metrics.noticeablePauseCount !== null && metrics.longPauseCount !== null) {
+    const longest =
+      metrics.longestPauseSeconds !== null && metrics.longestPauseSeconds !== undefined
+        ? seconds(metrics.longestPauseSeconds)
+        : null;
+    const longestNote = longest
+      ? ` The longest single pause was ${longest}. If mentioning pause lengths or the longest pause, you MUST cite the measured longest pause duration (${longest}) and NEVER confuse the 1.5s threshold with the pause duration.`
+      : "";
     out.push(
-      `Pauses of 0.5s or longer were measured: ${metrics.noticeablePauseCount}, of which ${metrics.longPauseCount} reached 1.5s. Refer to them when they bear on fluency.`,
+      `Pauses of 0.5s or longer were measured: ${metrics.noticeablePauseCount}, of which ${metrics.longPauseCount} reached 1.5s.${longestNote} Refer to them when they bear on fluency.`,
     );
   } else {
     out.push("No pause measurement exists for this take. Do not describe the pausing.");
