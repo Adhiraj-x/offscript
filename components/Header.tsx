@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTheme } from "./ThemeProvider";
 
 type Props = {
   streak?: number;
@@ -25,7 +26,54 @@ function FlameIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
   );
 }
 
+function SunIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
+    </svg>
+  );
+}
+
+function MoonIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </svg>
+  );
+}
+
 export default function Header({ streak, onLogoClick }: Props) {
+  const { theme, toggleTheme } = useTheme();
+  const isLight = theme === "light";
+
   const handleLogoClick = () => {
     onLogoClick?.();
   };
@@ -36,12 +84,16 @@ export default function Header({ streak, onLogoClick }: Props) {
         href="/"
         onClick={handleLogoClick}
         aria-label="Offscript home"
-        className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base rounded-sm cursor-pointer"
+        className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight text-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base rounded-sm cursor-pointer"
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+        <span
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ backgroundColor: "var(--color-logo-dot)" }}
+          aria-hidden="true"
+        />
         <span>Offscript</span>
       </Link>
-      <nav className="flex items-center gap-5 text-sm text-muted">
+      <nav className="flex items-center gap-4 sm:gap-5 text-sm text-muted">
         {typeof streak === "number" && streak > 0 ? (
           <span
             className="inline-flex items-center gap-1.5 text-accent"
@@ -52,12 +104,25 @@ export default function Header({ streak, onLogoClick }: Props) {
             <span className="sr-only">{streak} day streak</span>
           </span>
         ) : null}
-        <Link href="/" className="transition-colors hover:text-white">
+        <Link href="/" className="transition-colors hover:text-foreground">
           Practice
         </Link>
-        <Link href="/history" className="transition-colors hover:text-white">
+        <Link href="/history" className="transition-colors hover:text-foreground">
           History
         </Link>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}
+          title={isLight ? "Switch to dark theme" : "Switch to light theme"}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:text-foreground hover:bg-raised/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          {isLight ? (
+            <MoonIcon className="h-4 w-4" />
+          ) : (
+            <SunIcon className="h-4 w-4" />
+          )}
+        </button>
       </nav>
     </header>
   );

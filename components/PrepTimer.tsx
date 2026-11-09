@@ -36,7 +36,7 @@ export default function PrepTimer({ seconds, label, onDone, onSkip }: Props) {
       <p className="mt-5 font-mono text-6xl tabular-nums tracking-tight sm:text-7xl">
         {formatClock(remaining)}
       </p>
-      <div className="mx-auto mt-7 h-1 w-full max-w-md overflow-hidden rounded-full bg-line">
+      <div className="mx-auto mt-7 h-1 w-full max-w-md overflow-hidden rounded-full bg-track">
         <div
           className="h-full rounded-full bg-accent transition-all duration-1000 ease-linear"
           style={{ width: `${progress}%` }}
@@ -48,7 +48,7 @@ export default function PrepTimer({ seconds, label, onDone, onSkip }: Props) {
       <button
         type="button"
         onClick={onSkip}
-        className="mt-7 inline-flex items-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm text-white/85 transition-colors hover:border-accent/50 hover:text-white"
+        className="mt-7 inline-flex items-center gap-2 rounded-full border border-line bg-raised/70 px-5 py-2.5 text-sm font-medium text-foreground transition-all hover:border-foreground/30 hover:bg-raised hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         Skip to speaking
         <span aria-hidden>→</span>
