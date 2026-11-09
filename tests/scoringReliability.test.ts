@@ -87,6 +87,80 @@ test("GPT-OSS 20B and 120B receive identical system and user prompts", () => {
 });
 
 // 3. Completion-token exhaustion triggers the targeted retry
+test("exact production error with nested failed_generation is recognized as token exhaustion", () => {
+  const productionError = {
+    status: 400,
+    code: "json_validate_failed",
+    message: "400 Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+    error: {
+      message: "Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+      type: "invalid_request_error",
+      code: "json_validate_failed",
+      failed_generation: "max completion tokens reached before generating a valid document",
+    },
+  };
+
+  assert.equal(isTokenExhaustionError(productionError), true);
+});
+
+test("normal json_validate_failed without token exhaustion returns false", () => {
+  const normalJsonValidateFailed = {
+    status: 400,
+    code: "json_validate_failed",
+    message: "400 Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+    error: {
+      message: "Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+      type: "invalid_request_error",
+      code: "json_validate_failed",
+      failed_generation: '{"contentScore": 85, "deliveryScore": ',
+    },
+  };
+
+  assert.equal(isTokenExhaustionError(normalJsonValidateFailed), false);
+});
+
+test("HTTP 429 error returns false even if token phrasing is present", () => {
+  const rateLimitWithTokenPhrase = {
+    status: 429,
+    code: "rate_limit_exceeded",
+    message: "Rate limit reached on tokens per minute (TPM): max completion tokens limit exceeded",
+    error: {
+      code: "rate_limit_exceeded",
+      failed_generation: "max completion tokens reached before generating a valid document",
+    },
+  };
+
+  assert.equal(isTokenExhaustionError(rateLimitWithTokenPhrase), false);
+});
+
+test("HTTP 500 error returns false even if token phrasing is present", () => {
+  const serverErrorWithTokenPhrase = {
+    status: 500,
+    code: "internal_server_error",
+    message: "Internal server error: max completion tokens reached before generating a valid document",
+    error: {
+      code: "internal_server_error",
+      failed_generation: "max completion tokens reached before generating a valid document",
+    },
+  };
+
+  assert.equal(isTokenExhaustionError(serverErrorWithTokenPhrase), false);
+});
+
+test("token exhaustion phrase without json_validate_failed classification returns false", () => {
+  const genericErrorWithoutJsonClassification = {
+    status: 400,
+    code: "invalid_request_error",
+    message: "max completion tokens reached before generating a valid document",
+    error: {
+      type: "invalid_request_error",
+      message: "max completion tokens reached before generating a valid document",
+    },
+  };
+
+  assert.equal(isTokenExhaustionError(genericErrorWithoutJsonClassification), false);
+});
+
 test("completion-token exhaustion specifically triggers targeted retry with 8192 tokens", async () => {
   const calls: ModelCompletionCall[] = [];
 
@@ -123,6 +197,102 @@ test("completion-token exhaustion specifically triggers targeted retry with 8192
   assert.equal(calls[1].model, "openai/gpt-oss-120b");
   assert.equal(calls[1].maxCompletionTokens, 8192);
   assert.equal(calls[1].reasoningEffort, "medium");
+});
+
+test("production-shaped token exhaustion error triggers targeted 8192-token retry on primary and succeeds", async () => {
+  const calls: ModelCompletionCall[] = [];
+
+  const productionError = {
+    status: 400,
+    code: "json_validate_failed",
+    message: "400 Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+    error: {
+      message: "Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+      type: "invalid_request_error",
+      code: "json_validate_failed",
+      failed_generation: "max completion tokens reached before generating a valid document",
+    },
+  };
+
+  const result = await rateAnswer({
+    messages: testMessages,
+    primaryModel: "openai/gpt-oss-120b",
+    fallbackModel: "openai/gpt-oss-20b",
+    executeCompletion: async (call) => {
+      calls.push(call);
+      if (calls.length === 1) {
+        throw productionError;
+      }
+      return mockValidScoreJson;
+    },
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(calls.length, 2);
+
+  // 1. Primary model is called with normal 4096 completion tokens
+  assert.equal(calls[0].model, "openai/gpt-oss-120b");
+  assert.equal(calls[0].maxCompletionTokens, 4096);
+  assert.equal(calls[0].reasoningEffort, "medium");
+
+  // 2 & 3. Targeted retry runs with 8192 completion tokens
+  assert.equal(calls[1].model, "openai/gpt-oss-120b");
+  assert.equal(calls[1].maxCompletionTokens, 8192);
+  assert.equal(calls[1].reasoningEffort, "medium");
+
+  // 4. Targeted retry happened once and succeeded
+  assert.equal(result.tokenRetries, 1);
+  assert.equal(result.fallbackUsed, false);
+});
+
+test("targeted retry happens only once and falls back to fallbackModel if retry fails", async () => {
+  const calls: ModelCompletionCall[] = [];
+
+  const productionError = {
+    status: 400,
+    code: "json_validate_failed",
+    message: "400 Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+    error: {
+      message: "Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+      type: "invalid_request_error",
+      code: "json_validate_failed",
+      failed_generation: "max completion tokens reached before generating a valid document",
+    },
+  };
+
+  const result = await rateAnswer({
+    messages: testMessages,
+    primaryModel: "openai/gpt-oss-120b",
+    fallbackModel: "openai/gpt-oss-20b",
+    executeCompletion: async (call) => {
+      calls.push(call);
+      // Primary model fails on both initial 4096 call and 8192 retry
+      if (call.model === "openai/gpt-oss-120b") {
+        throw productionError;
+      }
+      // Fallback model succeeds
+      return mockValidScoreJson;
+    },
+  });
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  // Progression:
+  // 1: Primary @ 4096
+  // 2: Primary @ 8192 (single retry)
+  // 3: Fallback @ 4096
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0].model, "openai/gpt-oss-120b");
+  assert.equal(calls[0].maxCompletionTokens, 4096);
+  assert.equal(calls[1].model, "openai/gpt-oss-120b");
+  assert.equal(calls[1].maxCompletionTokens, 8192);
+  assert.equal(calls[2].model, "openai/gpt-oss-20b");
+  assert.equal(calls[2].maxCompletionTokens, 4096);
+
+  assert.equal(result.modelUsed, "openai/gpt-oss-20b");
+  assert.equal(result.fallbackUsed, true);
+  assert.equal(result.value.contentScore, 82);
 });
 
 // 4. Successful recovery returns a validated result
