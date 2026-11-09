@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { toFile } from "openai/uploads";
-import { GROQ_BASE_URL, GROQ_CHAT_MODEL } from "@/lib/groq";
+import {
+  GROQ_BASE_URL,
+  GROQ_SCORING_MODEL,
+  GROQ_SCORING_FALLBACK_MODEL,
+} from "@/lib/groq";
 import { detectFillers } from "@/lib/fillers";
 import { computeSpeechMetrics } from "@/lib/speechMetrics";
 import { buildTranscriptionRequest } from "@/lib/transcription";
@@ -107,7 +111,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const client = new OpenAI({ apiKey, baseURL: GROQ_BASE_URL });
+  const client = new OpenAI({ apiKey, baseURL: GROQ_BASE_URL, timeout: 25_000 });
 
   try {
     const extension = (audio.type || "").includes("mp4") ? "m4a" : "webm";
@@ -169,15 +173,31 @@ export async function POST(request: NextRequest) {
     const scoring = await rateAnswer({
       messages,
       paceBand,
-      requestCompletion: async (conversation) => {
+      primaryModel: GROQ_SCORING_MODEL,
+      fallbackModel: GROQ_SCORING_FALLBACK_MODEL,
+      executeCompletion: async ({
+        model,
+        messages: conversation,
+        temperature,
+        maxCompletionTokens,
+        reasoningEffort,
+      }) => {
         const completion = await client.chat.completions.create({
-          model: GROQ_CHAT_MODEL,
+          model,
           messages: conversation as OpenAI.Chat.ChatCompletionMessageParam[],
-          temperature: 0.3,
-          max_tokens: 1200,
+          temperature,
+          max_completion_tokens: maxCompletionTokens,
+          reasoning_effort: reasoningEffort,
           response_format: { type: "json_object" },
         });
         return completion.choices[0]?.message?.content ?? "";
+      },
+      onLog: (event) => {
+        console.warn(`[api/rate] ${event.message}`, {
+          type: event.type,
+          model: event.model,
+          ...(event.details ?? {}),
+        });
       },
     });
 
@@ -186,6 +206,8 @@ export async function POST(request: NextRequest) {
       console.warn("[api/rate] scoring reply rejected", {
         attempts: scoring.attempts,
         reason: scoring.reason,
+        modelUsed: scoring.modelUsed,
+        fallbackUsed: scoring.fallbackUsed,
       });
       return NextResponse.json(
         {
@@ -196,11 +218,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (scoring.attempts > 1) {
-      console.warn("[api/rate] scoring reply needed a corrected retry", {
-        attempts: scoring.attempts,
-      });
-    }
+    console.log("[api/rate] scoring succeeded", {
+      model: scoring.modelUsed,
+      attempts: scoring.attempts,
+      tokenRetries: scoring.tokenRetries,
+      fallbackUsed: scoring.fallbackUsed,
+    });
 
     return NextResponse.json({
       ok: true,

@@ -35,6 +35,7 @@ export default function HomePage() {
   const [phase, setPhase] = useState<Phase>("setup");
   const [result, setResult] = useState<RatingResult | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [retainedAudio, setRetainedAudio] = useState<Blob | null>(null);
   const [streak, setStreak] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [prepAttempt, setPrepAttempt] = useState(0);
@@ -63,6 +64,7 @@ export default function HomePage() {
       setPhase("scoring");
       setResult(null);
       setErrorMessage("");
+      setRetainedAudio(blob);
 
       const form = new FormData();
       const extension = blob.type.includes("mp4") ? "m4a" : "webm";
@@ -80,6 +82,7 @@ export default function HomePage() {
           if (response.status === 429) {
             message = "Free limit hit, try again in a minute.";
           } else if (payload?.error === "TOO_SHORT") {
+            setRetainedAudio(null);
             const words = Math.max(0, Math.round(Number(payload.wordCount ?? 0)));
             const seconds = Math.max(0, Math.round(Number(payload.duration ?? 0)));
             const heard = String(payload.transcript ?? "").trim();
@@ -152,6 +155,7 @@ export default function HomePage() {
         };
         saveSession(session);
 
+        setRetainedAudio(null);
         setResult(rated);
         setStreak(computeStreak(loadHistory()).current);
         setPhase("result");
@@ -176,6 +180,7 @@ export default function HomePage() {
 
   const retrySameTopic = useCallback(() => {
     if (!topic || !mode) return;
+    setRetainedAudio(null);
     setResult(null);
     setErrorMessage("");
     setPrepAttempt((prev) => prev + 1);
@@ -183,6 +188,7 @@ export default function HomePage() {
   }, [topic, mode]);
 
   const resetPractice = useCallback(() => {
+    setRetainedAudio(null);
     setResult(null);
     setErrorMessage("");
     setTopic(null);
@@ -196,6 +202,7 @@ export default function HomePage() {
 
   function pickMode(next: Mode) {
     setMode(next);
+    setRetainedAudio(null);
     if (phase !== "setup") {
       setPhase("setup");
       setResult(null);
@@ -338,10 +345,26 @@ export default function HomePage() {
             <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Couldn&apos;t score that</p>
             <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-foreground/85">{errorMessage}</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
+              {retainedAudio && topic && mode ? (
+                <button
+                  type="button"
+                  onClick={() => submitRecording(retainedAudio, topic, mode)}
+                  className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-contrast transition-opacity hover:opacity-90 active:scale-[0.98]"
+                >
+                  Retry evaluation
+                </button>
+              ) : null}
               <button
                 type="button"
-                onClick={() => setPhase("speak")}
-                className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-contrast transition-opacity hover:opacity-90"
+                onClick={() => {
+                  setRetainedAudio(null);
+                  setPhase("speak");
+                }}
+                className={
+                  retainedAudio && topic && mode
+                    ? "rounded-full border border-line bg-raised/70 px-5 py-2.5 text-sm font-medium text-foreground transition-all hover:border-foreground/30 hover:bg-raised hover:text-foreground active:scale-[0.98]"
+                    : "rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-contrast transition-opacity hover:opacity-90 active:scale-[0.98]"
+                }
               >
                 Record again
               </button>
