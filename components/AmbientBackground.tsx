@@ -84,13 +84,14 @@ export function AmbientProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-type ParticleType = "lime" | "teal" | "sage";
+export type ParticleType = "lime" | "teal" | "sage";
 
-type Particle = {
+export type Particle = {
   id: number;
   top: string;
   left: string;
   size: number;
+  darkSize: number;
   type: ParticleType;
   animationName: string;
   duration: string;
@@ -99,13 +100,16 @@ type Particle = {
 };
 
 // Deterministic particle set: 7 on mobile, 16 on desktop
-const PARTICLES: Particle[] = [
+// Light mode distribution: 2.5-3px (most), 3.5px (some), 4px (accent particles)
+// Dark mode distribution: 1.5-3px preserved unchanged
+export const PARTICLES: Particle[] = [
   // --- Mobile + Desktop (7 particles) ---
   {
     id: 1,
     top: "12%",
     left: "9%",
-    size: 2.5,
+    size: 3,
+    darkSize: 2.5,
     type: "lime",
     animationName: "particle-drift-1",
     duration: "26s",
@@ -116,7 +120,8 @@ const PARTICLES: Particle[] = [
     id: 2,
     top: "18%",
     left: "88%",
-    size: 3,
+    size: 4,
+    darkSize: 3,
     type: "lime",
     animationName: "particle-drift-2",
     duration: "22s",
@@ -127,7 +132,8 @@ const PARTICLES: Particle[] = [
     id: 3,
     top: "38%",
     left: "5%",
-    size: 2,
+    size: 2.5,
+    darkSize: 2,
     type: "teal",
     animationName: "particle-drift-3",
     duration: "34s",
@@ -138,7 +144,8 @@ const PARTICLES: Particle[] = [
     id: 4,
     top: "44%",
     left: "94%",
-    size: 2,
+    size: 3.5,
+    darkSize: 2,
     type: "sage",
     animationName: "particle-drift-4",
     duration: "30s",
@@ -149,7 +156,8 @@ const PARTICLES: Particle[] = [
     id: 5,
     top: "66%",
     left: "11%",
-    size: 2.5,
+    size: 3,
+    darkSize: 2.5,
     type: "lime",
     animationName: "particle-drift-1",
     duration: "28s",
@@ -160,7 +168,8 @@ const PARTICLES: Particle[] = [
     id: 6,
     top: "72%",
     left: "86%",
-    size: 2,
+    size: 2.5,
+    darkSize: 2,
     type: "teal",
     animationName: "particle-drift-2",
     duration: "36s",
@@ -171,7 +180,8 @@ const PARTICLES: Particle[] = [
     id: 7,
     top: "92%",
     left: "48%",
-    size: 2.5,
+    size: 3.5,
+    darkSize: 2.5,
     type: "lime",
     animationName: "particle-drift-3",
     duration: "25s",
@@ -184,7 +194,8 @@ const PARTICLES: Particle[] = [
     id: 8,
     top: "7%",
     left: "28%",
-    size: 1.5,
+    size: 2.5,
+    darkSize: 1.5,
     type: "sage",
     animationName: "particle-drift-4",
     duration: "38s",
@@ -195,7 +206,8 @@ const PARTICLES: Particle[] = [
     id: 9,
     top: "10%",
     left: "72%",
-    size: 2,
+    size: 3.5,
+    darkSize: 2,
     type: "teal",
     animationName: "particle-drift-2",
     duration: "32s",
@@ -206,7 +218,8 @@ const PARTICLES: Particle[] = [
     id: 10,
     top: "26%",
     left: "18%",
-    size: 1.5,
+    size: 2.5,
+    darkSize: 1.5,
     type: "lime",
     animationName: "particle-drift-1",
     duration: "40s",
@@ -217,7 +230,8 @@ const PARTICLES: Particle[] = [
     id: 11,
     top: "32%",
     left: "82%",
-    size: 2.5,
+    size: 4,
+    darkSize: 2.5,
     type: "sage",
     animationName: "particle-drift-3",
     duration: "29s",
@@ -228,7 +242,8 @@ const PARTICLES: Particle[] = [
     id: 12,
     top: "54%",
     left: "7%",
-    size: 2,
+    size: 3,
+    darkSize: 2,
     type: "lime",
     animationName: "particle-drift-4",
     duration: "35s",
@@ -239,7 +254,8 @@ const PARTICLES: Particle[] = [
     id: 13,
     top: "58%",
     left: "91%",
-    size: 1.5,
+    size: 2.5,
+    darkSize: 1.5,
     type: "teal",
     animationName: "particle-drift-1",
     duration: "42s",
@@ -250,7 +266,8 @@ const PARTICLES: Particle[] = [
     id: 14,
     top: "80%",
     left: "22%",
-    size: 2,
+    size: 3,
+    darkSize: 2,
     type: "sage",
     animationName: "particle-drift-3",
     duration: "33s",
@@ -261,7 +278,8 @@ const PARTICLES: Particle[] = [
     id: 15,
     top: "84%",
     left: "76%",
-    size: 2,
+    size: 3.5,
+    darkSize: 2,
     type: "lime",
     animationName: "particle-drift-2",
     duration: "27s",
@@ -272,7 +290,8 @@ const PARTICLES: Particle[] = [
     id: 16,
     top: "95%",
     left: "86%",
-    size: 1.5,
+    size: 2.5,
+    darkSize: 1.5,
     type: "teal",
     animationName: "particle-drift-4",
     duration: "39s",
@@ -313,7 +332,7 @@ export default function AmbientBackground({
       {/* Layer A: Ambient Aura Radial Light Fields */}
       {/* Aura 1: Upper-left diffuse sage-green / lime glow behind hero & header */}
       <div
-        className="ambient-aura-layer absolute -top-[14%] -left-[16%] w-[380px] h-[380px] sm:w-[660px] sm:h-[660px] rounded-full pointer-events-none"
+        className="ambient-aura-layer absolute -top-[14%] -left-[16%] w-[420px] h-[420px] sm:w-[720px] sm:h-[720px] rounded-full pointer-events-none"
         style={{
           background: "var(--ambient-aura-1)",
           animation: "ambient-aura-1 32s ease-in-out infinite",
@@ -323,7 +342,7 @@ export default function AmbientBackground({
 
       {/* Aura 2: Lower-right subtle muted teal glow */}
       <div
-        className="ambient-aura-layer absolute top-[44%] -right-[14%] sm:-right-[8%] w-[380px] h-[380px] sm:w-[640px] sm:h-[640px] rounded-full pointer-events-none"
+        className="ambient-aura-layer absolute top-[44%] -right-[14%] sm:-right-[8%] w-[400px] h-[400px] sm:w-[680px] sm:h-[680px] rounded-full pointer-events-none"
         style={{
           background: "var(--ambient-aura-2)",
           animation: "ambient-aura-2 36s ease-in-out infinite",
@@ -331,9 +350,9 @@ export default function AmbientBackground({
         }}
       />
 
-      {/* Aura 3: Hero region restrained lime illumination */}
+      {/* Aura 3: Hero region restrained olive illumination */}
       <div
-        className="ambient-aura-layer absolute top-[12%] sm:top-[10%] left-[10%] sm:left-[26%] w-[360px] h-[360px] sm:w-[580px] sm:h-[580px] rounded-full pointer-events-none opacity-70 sm:opacity-90"
+        className="ambient-aura-layer absolute top-[12%] sm:top-[10%] left-[10%] sm:left-[26%] w-[380px] h-[380px] sm:w-[620px] sm:h-[620px] rounded-full pointer-events-none opacity-80 sm:opacity-100"
         style={{
           background: "var(--ambient-aura-3)",
           animation: "ambient-aura-3 42s ease-in-out infinite",
@@ -348,16 +367,18 @@ export default function AmbientBackground({
           className={`ambient-particle-item ambient-particle-${p.type} ${p.animationName} absolute rounded-full ${
             p.isMobile ? "block" : "hidden sm:block"
           }`}
-          style={{
-            top: p.top,
-            left: p.left,
-            width: `${p.size}px`,
-            height: `${p.size}px`,
-            animationDuration: p.duration,
-            animationDelay: p.delay,
-            animationTimingFunction: "ease-in-out",
-            animationIterationCount: "infinite",
-          }}
+          style={
+            {
+              top: p.top,
+              left: p.left,
+              ["--p-size-light" as string]: `${p.size}px`,
+              ["--p-size-dark" as string]: `${p.darkSize}px`,
+              animationDuration: p.duration,
+              animationDelay: p.delay,
+              animationTimingFunction: "ease-in-out",
+              animationIterationCount: "infinite",
+            } as React.CSSProperties
+          }
         />
       ))}
     </div>

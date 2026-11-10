@@ -57,6 +57,69 @@ export default function HomePage() {
     setStreak(computeStreak(loadHistory()).current);
     // Quietly tops up the AI topic pool; never blocks the UI or a spin.
     void refreshTopicsInBackground();
+
+    try {
+      const q = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      if (q && q.get("mock_phase") === "prep") {
+        setMode("off-the-cuff");
+        setTopic({ text: "The Future of Ambient Interface Design", category: "CONCEPT" });
+        setPhase("prep");
+      } else if (q && q.get("mock_phase") === "speak") {
+        setMode("off-the-cuff");
+        setTopic({ text: "The Future of Ambient Interface Design", category: "CONCEPT" });
+        setPhase("speak");
+      } else if (q && q.get("mock_result") === "true") {
+        setMode("off-the-cuff");
+        setTopic({ text: "The Future of Ambient Interface Design", category: "CONCEPT" });
+        setPhase("result");
+        setResult({
+          overallScore: 84,
+          contentScore: 86,
+          deliveryScore: 81,
+          mainTakeaway: "Clear structure with articulate delivery and calm pacing.",
+          nextAttemptFocus: "Reduce pause duration when moving between key arguments.",
+          feedback: "A thoughtful and nuanced answer that made effective use of vivid imagery.",
+          strengths: ["Distinct main thesis", "Natural conversational tone"],
+          improvements: ["Watch pauses between paragraphs", "Vary articulation speed"],
+          wpm: 138,
+          fillerWordCount: 3,
+          transcript:
+            "Ambient interfaces should provide spatial depth and calmness without competing with the primary content.",
+          metrics: {
+            wordCount: 145,
+            durationSeconds: 63,
+            durationBasis: "reported",
+            activeSpeechSeconds: 55.9,
+            wpm: 138,
+            wpmBasis: "total-duration",
+            speakingRateWpm: 138,
+            articulationWpm: 155,
+            timestampGranularity: "word",
+            pausesAvailable: true,
+            pausesLowPrecision: false,
+            noticeablePauseThresholdSeconds: 0.5,
+            longPauseThresholdSeconds: 1.5,
+            noticeablePauseCount: 4,
+            noticeablePauseTotalSeconds: 7.1,
+            longPauseCount: 2,
+            longPauseTotalSeconds: 3.6,
+            longestPauseSeconds: 1.8,
+            pauseFrequencyPerMinute: 3.8,
+            pauseCount: 2,
+            pauseThresholdSeconds: 1.5,
+          },
+          fillers: {
+            total: 3,
+            definiteCount: 3,
+            contextualCount: 0,
+            repeatedRunCount: 0,
+            per100Words: 2.1,
+            counts: { um: 2, like: 1 },
+            isEstimate: true,
+          },
+        });
+      }
+    } catch {}
   }, []);
 
   const submitRecording = useCallback(
