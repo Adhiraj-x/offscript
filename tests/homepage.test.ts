@@ -641,10 +641,10 @@ test("dark and light theme system token architecture, persistence, and toggle be
   assert.equal(DARK_PARTICLE_COLORS.teal, "#2dd4bf");
   assert.equal(DARK_PARTICLE_COLORS.slate, "#e2e8f0");
 
-  // Particle opacity ranges for gentle twinkle shimmer without flash (low-glare light theme: 0.12 - 0.28)
-  const LIGHT_PARTICLE_OPACITY_RANGE = { min: 0.12, max: 0.28 };
-  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.min >= 0.10 && LIGHT_PARTICLE_OPACITY_RANGE.min <= 0.18);
-  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.max >= 0.24 && LIGHT_PARTICLE_OPACITY_RANGE.max <= 0.35);
+  // Particle opacity ranges for visible, elegant ambient movement (restored atmosphere: 0.20 - 0.42)
+  const LIGHT_PARTICLE_OPACITY_RANGE = { min: 0.20, max: 0.42 };
+  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.min >= 0.18 && LIGHT_PARTICLE_OPACITY_RANGE.min <= 0.25);
+  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.max >= 0.38 && LIGHT_PARTICLE_OPACITY_RANGE.max <= 0.45);
 });
 
 test("smooth view transition theme crossfade architecture and reduced motion handling", () => {
