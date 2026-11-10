@@ -105,33 +105,33 @@ html.light {
   /* Ambient light fields: diffuse sage-green (upper-left), muted teal (lower-right), restrained olive/lime (hero) */
   --ambient-aura-1: radial-gradient(
     circle at center,
-    rgba(142, 182, 138, 0.08) 0%,
-    rgba(160, 196, 156, 0.05) 30%,
-    rgba(186, 214, 183, 0.02) 55%,
+    rgba(136, 178, 132, 0.18) 0%,
+    rgba(158, 194, 154, 0.11) 30%,
+    rgba(182, 210, 179, 0.04) 55%,
     rgba(197, 208, 194, 0) 70%
   );
   --ambient-aura-2: radial-gradient(
     circle at center,
-    rgba(46, 158, 148, 0.06) 0%,
-    rgba(76, 178, 168, 0.04) 32%,
-    rgba(118, 198, 190, 0.015) 56%,
+    rgba(46, 158, 148, 0.11) 0%,
+    rgba(76, 178, 168, 0.07) 32%,
+    rgba(118, 198, 190, 0.025) 56%,
     rgba(197, 208, 194, 0) 70%
   );
   --ambient-aura-3: radial-gradient(
     circle at center,
-    rgba(165, 205, 80, 0.05) 0%,
-    rgba(182, 218, 110, 0.03) 30%,
-    rgba(205, 232, 145, 0.01) 50%,
+    rgba(135, 175, 70, 0.09) 0%,
+    rgba(155, 195, 95, 0.05) 30%,
+    rgba(180, 215, 125, 0.02) 50%,
     rgba(197, 208, 194, 0) 65%
   );
 
   /* Ambient Particle Theme Colors - Light Mode (Deep Olive, Muted Dark Sage, Soft Charcoal) */
   --particle-lime: #527a25;
-  --particle-lime-glow: 0 0 1px rgba(82, 122, 37, 0.08);
+  --particle-lime-glow: 0 0 2.5px rgba(82, 122, 37, 0.15);
   --particle-teal: #53634f;
-  --particle-teal-glow: 0 0 1px rgba(83, 99, 79, 0.06);
+  --particle-teal-glow: 0 0 2.5px rgba(83, 99, 79, 0.13);
   --particle-sage: #374239;
-  --particle-sage-glow: 0 0 1px rgba(55, 66, 57, 0.05);
+  --particle-sage-glow: 0 0 2px rgba(55, 66, 57, 0.11);
 }
 
 html {
@@ -413,88 +413,88 @@ body {
 @keyframes particle-drift-light-1 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.16;
+    opacity: 0.24;
   }
   24% {
-    opacity: 0.28;
+    opacity: 0.42;
   }
   48% {
     transform: translate3d(14px, -18px, 0);
-    opacity: 0.12;
+    opacity: 0.20;
   }
   72% {
     transform: translate3d(-10px, -30px, 0);
-    opacity: 0.26;
+    opacity: 0.38;
   }
   88% {
     transform: translate3d(-16px, -14px, 0);
-    opacity: 0.14;
+    opacity: 0.22;
   }
 }
 
 @keyframes particle-drift-light-2 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.14;
+    opacity: 0.22;
   }
   28% {
     transform: translate3d(-16px, 16px, 0);
-    opacity: 0.27;
+    opacity: 0.40;
   }
   50% {
-    opacity: 0.12;
+    opacity: 0.20;
   }
   74% {
     transform: translate3d(12px, 28px, 0);
-    opacity: 0.25;
+    opacity: 0.38;
   }
   86% {
     transform: translate3d(18px, 12px, 0);
-    opacity: 0.16;
+    opacity: 0.24;
   }
 }
 
 @keyframes particle-drift-light-3 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.15;
+    opacity: 0.23;
   }
   20% {
     transform: translate3d(18px, 14px, 0);
-    opacity: 0.26;
+    opacity: 0.39;
   }
   44% {
-    opacity: 0.12;
+    opacity: 0.20;
   }
   68% {
     transform: translate3d(-12px, 24px, 0);
-    opacity: 0.28;
+    opacity: 0.42;
   }
   86% {
     transform: translate3d(-18px, 10px, 0);
-    opacity: 0.14;
+    opacity: 0.22;
   }
 }
 
 @keyframes particle-drift-light-4 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.16;
+    opacity: 0.25;
   }
   26% {
-    opacity: 0.12;
+    opacity: 0.20;
   }
   50% {
     transform: translate3d(-16px, -20px, 0);
-    opacity: 0.27;
+    opacity: 0.41;
   }
   74% {
     transform: translate3d(14px, -12px, 0);
-    opacity: 0.13;
+    opacity: 0.21;
   }
   88% {
     transform: translate3d(18px, 10px, 0);
-    opacity: 0.24;
+    opacity: 0.36;
   }
 }
 
