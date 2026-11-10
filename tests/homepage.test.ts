@@ -16,6 +16,7 @@ import {
   smoothBarValue,
 } from "../components/Recorder";
 import { runThemeTransition } from "../components/ThemeProvider";
+import { PARTICLES } from "../components/AmbientBackground";
 
 test("MODES configuration has exact names, prep seconds and descriptions", () => {
   assert.equal(MODES.length, 2);
@@ -324,6 +325,33 @@ test("ambient background particle and aura specifications", () => {
   assert.ok(AURA_COUNT >= 2 && AURA_COUNT <= 3);
   assert.ok(MIN_AURA_CYCLE_SECONDS >= 25);
   assert.ok(MAX_AURA_CYCLE_SECONDS <= 45);
+
+  // Particle size distribution verification (Section 4)
+  assert.equal(PARTICLES.length, 16);
+  const mobileSet = PARTICLES.filter((p) => p.isMobile);
+  assert.equal(mobileSet.length, 7);
+
+  // Desktop distribution: most 2.5-3px, some 3.5px, a few larger accent particles 4px
+  const desktopMost = PARTICLES.filter((p) => p.size >= 2.5 && p.size <= 3.0).length;
+  const desktopSome = PARTICLES.filter((p) => p.size === 3.5).length;
+  const desktopAccents = PARTICLES.filter((p) => p.size === 4.0).length;
+  assert.ok(desktopMost >= 9, "Most particles must be 2.5-3px");
+  assert.ok(desktopSome >= 3, "Some particles must be 3.5px");
+  assert.ok(desktopAccents >= 2, "A few larger accent particles must be 4px");
+
+  // Mobile distribution: applies distribution to mobile as well
+  const mobileMost = mobileSet.filter((p) => p.size >= 2.5 && p.size <= 3.0).length;
+  const mobileSome = mobileSet.filter((p) => p.size === 3.5).length;
+  const mobileAccents = mobileSet.filter((p) => p.size === 4.0).length;
+  assert.ok(mobileMost >= 3, "Most mobile particles must be 2.5-3px");
+  assert.ok(mobileSome >= 2, "Some mobile particles must be 3.5px");
+  assert.ok(mobileAccents >= 1, "Accent mobile particles must be 4px");
+
+  // Dark mode particle size preservation (Section 8)
+  assert.ok(
+    PARTICLES.every((p) => p.darkSize >= 1.5 && p.darkSize <= 3.0),
+    "Dark mode particle sizes must be preserved between 1.5-3px"
+  );
 });
 
 test("contextual ambient background intensity levels across application routes and practice phases", () => {
@@ -618,20 +646,20 @@ test("dark and light theme system token architecture, persistence, and toggle be
   assert.equal(LIGHT_AURA_CONFIG.aura3, "restrained lime illumination hero region");
   assert.ok(LIGHT_AURA_CONFIG.hasFeatheredEdges);
 
-  // Particle color set in light mode: deep olive, muted dark sage, and soft charcoal
+  // Particle color set in light mode: forest olive, deep sage, and muted teal (Section 3)
   const LIGHT_PARTICLE_COLORS = {
-    deepOlive: "#527a25",
-    mutedDarkSage: "#53634f",
-    softCharcoal: "#374239",
+    forestOlive: "#3f641f",
+    deepSage: "#36594d",
+    mutedTeal: "#356d68",
   };
-  assert.equal(LIGHT_PARTICLE_COLORS.deepOlive, "#527a25");
-  assert.equal(LIGHT_PARTICLE_COLORS.mutedDarkSage, "#53634f");
-  assert.equal(LIGHT_PARTICLE_COLORS.softCharcoal, "#374239");
-  assert.notEqual(LIGHT_PARTICLE_COLORS.deepOlive, "#000000", "Must not use solid black particles");
-  assert.notEqual(LIGHT_PARTICLE_COLORS.mutedDarkSage, "#000000", "Must not use solid black particles");
-  assert.notEqual(LIGHT_PARTICLE_COLORS.softCharcoal, "#000000", "Must not use solid black particles");
+  assert.equal(LIGHT_PARTICLE_COLORS.forestOlive, "#3f641f");
+  assert.equal(LIGHT_PARTICLE_COLORS.deepSage, "#36594d");
+  assert.equal(LIGHT_PARTICLE_COLORS.mutedTeal, "#356d68");
+  assert.notEqual(LIGHT_PARTICLE_COLORS.forestOlive, "#000000", "Must not use solid black particles");
+  assert.notEqual(LIGHT_PARTICLE_COLORS.deepSage, "#000000", "Must not use solid black particles");
+  assert.notEqual(LIGHT_PARTICLE_COLORS.mutedTeal, "#000000", "Must not use solid black particles");
 
-  // Particle color set in dark mode: lime, teal, and slate/sage
+  // Particle color set in dark mode: lime, teal, and slate/sage (Preserved 100%)
   const DARK_PARTICLE_COLORS = {
     lime: "#c9f96c",
     teal: "#2dd4bf",
@@ -641,10 +669,16 @@ test("dark and light theme system token architecture, persistence, and toggle be
   assert.equal(DARK_PARTICLE_COLORS.teal, "#2dd4bf");
   assert.equal(DARK_PARTICLE_COLORS.slate, "#e2e8f0");
 
-  // Particle opacity ranges for visible, elegant ambient movement (restored atmosphere: 0.20 - 0.42)
-  const LIGHT_PARTICLE_OPACITY_RANGE = { min: 0.20, max: 0.42 };
-  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.min >= 0.18 && LIGHT_PARTICLE_OPACITY_RANGE.min <= 0.25);
-  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.max >= 0.38 && LIGHT_PARTICLE_OPACITY_RANGE.max <= 0.45);
+  // Particle opacity ranges for visible, elegant ambient movement (restrained atmosphere: 0.24 - 0.45)
+  const LIGHT_PARTICLE_OPACITY_RANGE = { min: 0.24, max: 0.45 };
+  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.min >= 0.22 && LIGHT_PARTICLE_OPACITY_RANGE.min <= 0.26);
+  assert.ok(LIGHT_PARTICLE_OPACITY_RANGE.max >= 0.42 && LIGHT_PARTICLE_OPACITY_RANGE.max <= 0.48);
+
+  // Aura peak opacity assertions in globals.css
+  const globalsContent = fs.readFileSync(path.join(process.cwd(), "app", "globals.css"), "utf-8");
+  assert.ok(globalsContent.includes("rgba(84, 134, 76, 0.28)"), "Sage aura 1 peak opacity must be 0.28");
+  assert.ok(globalsContent.includes("rgba(52, 143, 128, 0.18)"), "Teal aura 2 peak opacity must be 0.18");
+  assert.ok(globalsContent.includes("rgba(140, 174, 67, 0.14)"), "Olive aura 3 peak opacity must be 0.14");
 });
 
 test("smooth view transition theme crossfade architecture and reduced motion handling", () => {
