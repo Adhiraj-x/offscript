@@ -105,33 +105,36 @@ html.light {
   /* Ambient light fields: diffuse sage-green (upper-left), muted teal (lower-right), restrained olive/lime (hero) */
   --ambient-aura-1: radial-gradient(
     circle at center,
-    rgba(136, 178, 132, 0.18) 0%,
-    rgba(158, 194, 154, 0.11) 30%,
-    rgba(182, 210, 179, 0.04) 55%,
-    rgba(197, 208, 194, 0) 70%
+    rgba(84, 134, 76, 0.28) 0%,
+    rgba(95, 145, 86, 0.22) 20%,
+    rgba(115, 162, 107, 0.14) 40%,
+    rgba(145, 185, 138, 0.06) 60%,
+    rgba(197, 208, 194, 0) 75%
   );
   --ambient-aura-2: radial-gradient(
     circle at center,
-    rgba(46, 158, 148, 0.11) 0%,
-    rgba(76, 178, 168, 0.07) 32%,
-    rgba(118, 198, 190, 0.025) 56%,
-    rgba(197, 208, 194, 0) 70%
+    rgba(52, 143, 128, 0.18) 0%,
+    rgba(65, 155, 140, 0.13) 22%,
+    rgba(88, 172, 158, 0.07) 45%,
+    rgba(125, 192, 180, 0.025) 62%,
+    rgba(197, 208, 194, 0) 75%
   );
   --ambient-aura-3: radial-gradient(
     circle at center,
-    rgba(135, 175, 70, 0.09) 0%,
-    rgba(155, 195, 95, 0.05) 30%,
-    rgba(180, 215, 125, 0.02) 50%,
-    rgba(197, 208, 194, 0) 65%
+    rgba(140, 174, 67, 0.14) 0%,
+    rgba(152, 184, 82, 0.09) 24%,
+    rgba(170, 198, 108, 0.04) 48%,
+    rgba(188, 210, 142, 0.015) 62%,
+    rgba(197, 208, 194, 0) 72%
   );
 
-  /* Ambient Particle Theme Colors - Light Mode (Deep Olive, Muted Dark Sage, Soft Charcoal) */
-  --particle-lime: #527a25;
-  --particle-lime-glow: 0 0 2.5px rgba(82, 122, 37, 0.15);
-  --particle-teal: #53634f;
-  --particle-teal-glow: 0 0 2.5px rgba(83, 99, 79, 0.13);
-  --particle-sage: #374239;
-  --particle-sage-glow: 0 0 2px rgba(55, 66, 57, 0.11);
+  /* Ambient Particle Theme Colors - Light Mode (Forest Olive, Deep Sage, Muted Teal) */
+  --particle-lime: #3f641f;
+  --particle-lime-glow: 0 0 3px rgba(63, 100, 31, 0.20);
+  --particle-teal: #356d68;
+  --particle-teal-glow: 0 0 2px rgba(53, 109, 104, 0.18);
+  --particle-sage: #36594d;
+  --particle-sage-glow: 0 0 3px rgba(54, 89, 77, 0.18);
 }
 
 html {
@@ -413,88 +416,88 @@ body {
 @keyframes particle-drift-light-1 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.24;
+    opacity: 0.28;
   }
   24% {
-    opacity: 0.42;
+    opacity: 0.45;
   }
   48% {
     transform: translate3d(14px, -18px, 0);
-    opacity: 0.20;
+    opacity: 0.24;
   }
   72% {
     transform: translate3d(-10px, -30px, 0);
-    opacity: 0.38;
+    opacity: 0.41;
   }
   88% {
     transform: translate3d(-16px, -14px, 0);
-    opacity: 0.22;
+    opacity: 0.26;
   }
 }
 
 @keyframes particle-drift-light-2 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.22;
+    opacity: 0.26;
   }
   28% {
     transform: translate3d(-16px, 16px, 0);
-    opacity: 0.40;
+    opacity: 0.44;
   }
   50% {
-    opacity: 0.20;
+    opacity: 0.24;
   }
   74% {
     transform: translate3d(12px, 28px, 0);
-    opacity: 0.38;
+    opacity: 0.42;
   }
   86% {
     transform: translate3d(18px, 12px, 0);
-    opacity: 0.24;
+    opacity: 0.29;
   }
 }
 
 @keyframes particle-drift-light-3 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.23;
+    opacity: 0.27;
   }
   20% {
     transform: translate3d(18px, 14px, 0);
-    opacity: 0.39;
+    opacity: 0.43;
   }
   44% {
-    opacity: 0.20;
+    opacity: 0.24;
   }
   68% {
     transform: translate3d(-12px, 24px, 0);
-    opacity: 0.42;
+    opacity: 0.45;
   }
   86% {
     transform: translate3d(-18px, 10px, 0);
-    opacity: 0.22;
+    opacity: 0.26;
   }
 }
 
 @keyframes particle-drift-light-4 {
   0%, 100% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.25;
+    opacity: 0.30;
   }
   26% {
-    opacity: 0.20;
+    opacity: 0.24;
   }
   50% {
     transform: translate3d(-16px, -20px, 0);
-    opacity: 0.41;
+    opacity: 0.45;
   }
   74% {
     transform: translate3d(14px, -12px, 0);
-    opacity: 0.21;
+    opacity: 0.25;
   }
   88% {
     transform: translate3d(18px, 10px, 0);
-    opacity: 0.36;
+    opacity: 0.40;
   }
 }
 
@@ -522,6 +525,18 @@ html.light .particle-drift-4 {
 .ambient-container {
   transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: opacity;
+}
+
+/* Ambient Particle Sizing (Theme-Adaptive) */
+.ambient-particle-item {
+  width: var(--p-size-dark, 2px);
+  height: var(--p-size-dark, 2px);
+}
+
+html[data-theme="light"] .ambient-particle-item,
+html.light .ambient-particle-item {
+  width: var(--p-size-light, 3px);
+  height: var(--p-size-light, 3px);
 }
 
 .ambient-particle-lime {
